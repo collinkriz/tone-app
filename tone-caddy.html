@@ -121,6 +121,10 @@
   .chain-node { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; text-align: center; font-size: 18px; line-height: 1; }
   .chain-arrow { flex-shrink: 0; color: var(--text-muted); font-size: 14px; }
 
+  /* GUITAR SELECTOR */
+  .guitar-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 9px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-dim); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .guitar-pill.selected { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
   /* PEDAL VERIFY BANNER */
   .verify-banner { border-radius: 8px; padding: 14px 16px; margin-top: 12px; display: none; animation: fadeIn 0.3s ease; }
   .verify-banner.visible { display: block; }
@@ -161,7 +165,10 @@
 <div class="status-bar"></div>
 <div class="header">
   <div class="logo">Tone<span>Caddy</span></div>
-  <button class="api-btn" id="apiToggle" onclick="toggleApiModal()">API Key</button>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="api-btn" id="usageBadgeBtn" onclick="openUsageModal()" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;">$<span id="usageBadge">0.0000</span></button>
+    <button class="api-btn" id="apiToggle" onclick="toggleApiModal()">API Key</button>
+  </div>
 </div>
 
 <nav class="nav">
@@ -174,6 +181,12 @@
 <!-- TONE PAGE -->
 <div class="page active" id="page-tone">
   <div style="height:20px"></div>
+
+  <!-- STEP 1: Guitar selector -->
+  <div class="section-label">Guitar</div>
+  <div id="guitarSelector" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;"></div>
+
+  <!-- STEP 2: Song input -->
   <div class="section-label">Song or Artist</div>
   <div class="song-input-wrap">
     <span class="song-input-icon">🎵</span>
@@ -183,7 +196,23 @@
     <div class="form-label">Style hint (optional)</div>
     <input class="form-input" id="styleInput" type="text" placeholder="e.g. intro clean tone, solo crunch..." autocomplete="off">
   </div>
-  <button class="get-tone-btn" id="toneBtn" onclick="getTone()">Get Tone Settings</button>
+  <button class="get-tone-btn" id="toneBtn" onclick="identifySong()">Find Song</button>
+
+  <!-- Song confirm card (shown after identification) -->
+  <div id="songConfirmArea" style="display:none; margin-bottom:20px;">
+    <div class="section-label">Confirm Song</div>
+    <div id="songConfirmCard" style="background:var(--surface); border:1px solid var(--amber-dim); border-radius:10px; padding:16px; margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--amber-dim); margin-bottom:8px;">Identified</div>
+      <div id="songConfirmTitle" style="font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:900; color:var(--text); margin-bottom:2px;"></div>
+      <div id="songConfirmArtist" style="font-size:14px; color:var(--text-dim); margin-bottom:8px;"></div>
+      <div id="songConfirmMeta" style="font-size:13px; color:var(--text-muted); line-height:1.6;"></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-secondary" style="flex:1" onclick="resetSongSearch()">← Try Again</button>
+      <button class="btn-primary" style="flex:2" onclick="getTone()">Get Tone Settings →</button>
+    </div>
+  </div>
+
   <div class="response-area" id="responseArea"></div>
   <div class="safe-bottom"></div>
 </div>
@@ -272,6 +301,44 @@
   </div>
 </div>
 
+<!-- USAGE MODAL -->
+<div class="modal-overlay" id="usageModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">API Usage</div>
+
+    <!-- Summary stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Total Spent</div>
+        <div id="usageTotalCost" style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--amber);">$0.0000</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">API Calls</div>
+        <div id="usageCallCount" style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--text);">0</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Input Tokens</div>
+        <div id="usageTotalIn" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text-dim);">0</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Output Tokens</div>
+        <div id="usageTotalOut" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text-dim);">0</div>
+      </div>
+    </div>
+
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Recent Calls</div>
+    <div id="usageCallList" style="max-height:260px;overflow-y:auto;"></div>
+
+    <p style="font-size:11px;color:var(--text-muted);margin-top:14px;line-height:1.6;">Sonnet 4 · $3/M input · $15/M output. Tracked locally — verify at platform.anthropic.com.</p>
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-danger" style="margin:0;flex:1" onclick="resetUsage()">Reset Data</button>
+      <button class="btn-primary" style="flex:2" onclick="closeModal('usageModal')">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- API KEY MODAL -->
 <div class="modal-overlay" id="apiModal">
   <div class="modal">
@@ -318,9 +385,87 @@ let currentToneHTML = '';
 let currentToneText = '';
 let currentInfoText = '';
 let currentFavIndex = -1;
+let selectedGuitarIndex = 0;
+let confirmedSongTitle = '';
+let confirmedSongArtist = '';
 
 function saveGearData() { localStorage.setItem('tc_gear', JSON.stringify(gear)); }
 function saveFavorites() { localStorage.setItem('tc_favorites', JSON.stringify(favorites)); }
+
+// ===== USAGE TRACKING =====
+// Sonnet 4 pricing: $3/M input tokens, $15/M output tokens
+const PRICE_IN = 3 / 1_000_000;
+const PRICE_OUT = 15 / 1_000_000;
+
+let usage = JSON.parse(localStorage.getItem('tc_usage') || '{"calls":[],"totalIn":0,"totalOut":0}');
+
+function trackUsage(label, inputTokens, outputTokens) {
+  usage.totalIn += inputTokens;
+  usage.totalOut += outputTokens;
+  usage.calls.push({
+    label,
+    in: inputTokens,
+    out: outputTokens,
+    cost: inputTokens * PRICE_IN + outputTokens * PRICE_OUT,
+    ts: Date.now()
+  });
+  // Keep last 100 calls
+  if (usage.calls.length > 100) usage.calls = usage.calls.slice(-100);
+  localStorage.setItem('tc_usage', JSON.stringify(usage));
+  updateUsageBadge();
+}
+
+function totalCost() {
+  return usage.totalIn * PRICE_IN + usage.totalOut * PRICE_OUT;
+}
+
+function updateUsageBadge() {
+  const el = document.getElementById('usageBadge');
+  if (el) el.textContent = '$' + totalCost().toFixed(4);
+}
+
+function resetUsage() {
+  if (confirm('Reset all usage data?')) {
+    usage = { calls: [], totalIn: 0, totalOut: 0 };
+    localStorage.setItem('tc_usage', JSON.stringify(usage));
+    updateUsageBadge();
+    renderUsageModal();
+  }
+}
+
+function renderUsageModal() {
+  const cost = totalCost();
+  const callCount = usage.calls.length;
+  const recent = [...usage.calls].reverse().slice(0, 20);
+
+  document.getElementById('usageTotalCost').textContent = '$' + cost.toFixed(4);
+  document.getElementById('usageTotalIn').textContent = usage.totalIn.toLocaleString();
+  document.getElementById('usageTotalOut').textContent = usage.totalOut.toLocaleString();
+  document.getElementById('usageCallCount').textContent = callCount;
+
+  const list = document.getElementById('usageCallList');
+  if (!recent.length) {
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px 0;">No API calls yet</div>';
+    return;
+  }
+  list.innerHTML = recent.map(c => {
+    const d = new Date(c.ts);
+    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:13px;color:var(--text-dim)">${c.label}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${date} ${time} · ${c.in.toLocaleString()} in / ${c.out.toLocaleString()} out</div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--amber);flex-shrink:0;margin-left:12px">$${c.cost.toFixed(4)}</div>
+    </div>`;
+  }).join('');
+}
+
+function openUsageModal() {
+  renderUsageModal();
+  document.getElementById('usageModal').classList.add('open');
+}
 
 // ===== PAGES =====
 function showPage(name, el) {
@@ -438,6 +583,7 @@ In 2-3 sentences, confirm you recognize this pedal and briefly describe its soni
       const raw = await res.text();
       const data = JSON.parse(raw);
       if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+      if (data.usage) trackUsage('Pedal verify: ' + name.substring(0,20), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
       const reply = data.content[0].text;
       banner.className = 'verify-banner visible success';
       document.getElementById('verifyTitle').textContent = '✓ Pedal Recognized';
@@ -512,14 +658,92 @@ function closeModal(id) {
   }
 }
 
+// ===== GUITAR SELECTOR =====
+function renderGuitarSelector() {
+  const el = document.getElementById('guitarSelector');
+  if (!el) return;
+  if (!gear.guitars.length) { el.innerHTML = '<span style="color:var(--text-muted);font-size:13px">No guitars added yet</span>'; return; }
+  el.innerHTML = gear.guitars.map((g, i) =>
+    `<button class="guitar-pill ${i === selectedGuitarIndex ? 'selected' : ''}" onclick="selectGuitar(${i})">${g.name}</button>`
+  ).join('');
+}
+
+function selectGuitar(i) {
+  selectedGuitarIndex = i;
+  renderGuitarSelector();
+}
+
+// ===== SONG IDENTIFICATION =====
+async function identifySong() {
+  const query = document.getElementById('songInput').value.trim();
+  if (!query) { alert('Enter a song or artist name'); return; }
+  if (!apiKey) { alert('Add your Anthropic API key first'); toggleApiModal(); return; }
+
+  const btn = document.getElementById('toneBtn');
+  const confirmArea = document.getElementById('songConfirmArea');
+  const responseArea = document.getElementById('responseArea');
+
+  btn.disabled = true;
+  btn.textContent = 'Identifying...';
+  confirmArea.style.display = 'none';
+  responseArea.className = 'response-area';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: `Identify this song or artist: "${query}". Respond ONLY with valid JSON, no markdown, no explanation, exactly this shape: {"title":"Song Title","artist":"Artist Name","year":"1995","genre":"Rock","notes":"One sentence about the guitar tone or sound."} If it's just an artist name with no specific song, pick their most iconic song. If you don't recognize it, use {"title":"${query}","artist":"Unknown","year":"","genre":"","notes":"Could not identify — proceeding with your input."}` }]
+      })
+    });
+    const raw = await res.text();
+    const data = JSON.parse(raw);
+    if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+    if (data.usage) trackUsage('Song ID', data.usage.input_tokens || 0, data.usage.output_tokens || 0);
+    const text = data.content[0].text.replace(/```json|```/g, '').trim();
+    const song = JSON.parse(text);
+
+    confirmedSongTitle = song.title;
+    confirmedSongArtist = song.artist;
+    document.getElementById('songConfirmTitle').textContent = song.title;
+    document.getElementById('songConfirmArtist').textContent = song.artist + (song.year ? '  ·  ' + song.year : '') + (song.genre ? '  ·  ' + song.genre : '');
+    document.getElementById('songConfirmMeta').textContent = song.notes || '';
+    confirmArea.style.display = 'block';
+    btn.style.display = 'none';
+    confirmArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch(e) {
+    // fallback: just use the raw input
+    confirmedSongTitle = query;
+    confirmedSongArtist = '';
+    document.getElementById('songConfirmTitle').textContent = query;
+    document.getElementById('songConfirmArtist').textContent = 'Proceeding with your input';
+    document.getElementById('songConfirmMeta').textContent = '';
+    confirmArea.style.display = 'block';
+    btn.style.display = 'none';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Find Song';
+}
+
+function resetSongSearch() {
+  document.getElementById('songConfirmArea').style.display = 'none';
+  document.getElementById('toneBtn').style.display = '';
+  document.getElementById('responseArea').className = 'response-area';
+  confirmedSongTitle = '';
+  confirmedSongArtist = '';
+}
+
 // ===== TONE ENGINE =====
 async function getTone() {
-  const song = document.getElementById('songInput').value.trim();
+  const song = confirmedSongTitle || document.getElementById('songInput').value.trim();
   if (!song) { alert('Enter a song or artist name'); return; }
   if (!apiKey) { alert('Add your Anthropic API key first'); toggleApiModal(); return; }
 
   const style = document.getElementById('styleInput').value.trim();
-  currentSong = song;
+  const songLabel = confirmedSongArtist ? `${confirmedSongTitle} by ${confirmedSongArtist}` : song;
+  currentSong = songLabel;
   currentStyle = style;
   currentToneText = '';
   currentToneHTML = '';
@@ -552,6 +776,7 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
     try { data = JSON.parse(raw); } catch(e) { throw new Error('Bad JSON (status ' + res.status + '): ' + raw.substring(0, 300)); }
     if (!res.ok || data.type === 'error') throw new Error('API error (status ' + res.status + '): ' + JSON.stringify(data).substring(0, 300));
     if (!data.content || !data.content[0] || !data.content[0].text) throw new Error('Unexpected shape (status ' + res.status + '): ' + raw.substring(0, 300));
+    if (data.usage) trackUsage('Tone: ' + (confirmedSongTitle || 'song'), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
     currentToneText = data.content[0].text;
     currentToneHTML = formatResponse(currentToneText);
     const isFaved = isFavorited(song, style);
@@ -615,6 +840,7 @@ In 3-5 sentences, explain WHY these settings achieve this sound. Talk about the 
     const raw = await res.text();
     const data = JSON.parse(raw);
     if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+    if (data.usage) trackUsage('Why: ' + currentSong.substring(0,20), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
     currentInfoText = data.content[0].text;
     document.getElementById('infoPanelText').textContent = currentInfoText;
   } catch(e) {
@@ -705,7 +931,8 @@ function deleteFav() {
 // ===== HELPERS =====
 function buildGearContext() {
   let ctx = '';
-  if (gear.guitars.length) ctx += 'GUITARS:\n' + gear.guitars.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n') + '\n\n';
+  const selectedGuitar = gear.guitars[selectedGuitarIndex];
+  if (selectedGuitar) ctx += 'GUITAR (selected):\n- ' + selectedGuitar.name + ': ' + selectedGuitar.notes + (selectedGuitar.controls?.length ? `. Controls: ${selectedGuitar.controls.join(', ')}` : '') + '\n\n';
   if (gear.amps.length) ctx += 'AMPS:\n' + gear.amps.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n') + '\n\n';
   if (gear.pedals.length) ctx += 'PEDALS (signal chain order):\n' + gear.pedals.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n');
   return ctx;
@@ -730,10 +957,12 @@ function init() {
   const btn = document.getElementById('apiToggle');
   if (apiKey) { btn.classList.add('set'); btn.textContent = '🔑 Set'; }
   renderGear();
+  renderGuitarSelector();
+  updateUsageBadge();
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
   });
-  document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') getTone(); });
+  document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') identifySong(); });
 }
 
 init();
