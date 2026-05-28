@@ -255,30 +255,54 @@
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle">Add Pedal</div>
-    <div class="form-group">
-      <label class="form-label">Name / Model</label>
-      <input class="form-input" id="gearName" placeholder="e.g. Boss BD-2 Blues Driver" type="text">
+
+    <!-- STEP 1: Name entry + Identify -->
+    <div id="gearStep1">
+      <div class="form-group">
+        <label class="form-label">Name / Model</label>
+        <input class="form-input" id="gearName" placeholder="e.g. Ibanez Tube Screamer" type="text">
+      </div>
+      <div class="verify-banner" id="verifyBanner">
+        <div class="verify-banner-title" id="verifyTitle"></div>
+        <div class="verify-banner-text" id="verifyText"></div>
+      </div>
+      <div class="modal-actions" id="gearStep1Actions">
+        <button class="btn-secondary" onclick="closeModal('addGearModal')">Cancel</button>
+        <button class="btn-primary" id="gearIdentifyBtn" onclick="identifyGear()">Identify →</button>
+      </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Notes / Key Features</label>
-      <textarea class="form-textarea" id="gearNotes" placeholder="e.g. Always-on light overdrive, warm breakup..."></textarea>
+
+    <!-- STEP 2: Confirm identified gear + optional edits -->
+    <div id="gearStep2" style="display:none;">
+      <!-- Identified card -->
+      <div id="gearConfirmCard" style="background:var(--surface2); border:1px solid var(--amber-dim); border-radius:8px; padding:14px; margin-bottom:16px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--amber-dim);margin-bottom:6px;">Identified</div>
+        <div id="gearConfirmName" style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;color:var(--text);margin-bottom:4px;"></div>
+        <div id="gearConfirmDesc" style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:8px;"></div>
+        <div id="gearConfirmControls" style="font-size:12px;color:var(--text-muted);"></div>
+      </div>
+      <!-- Optional overrides -->
+      <div style="margin-bottom:10px;">
+        <button onclick="toggleGearOverrides()" style="background:none;border:none;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;" id="overrideToggleBtn">＋ Edit Details</button>
+      </div>
+      <div id="gearOverrides" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Notes (override)</label>
+          <textarea class="form-textarea" id="gearNotes" placeholder="Leave blank to use identified description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Controls (override)</label>
+          <input class="form-input" id="gearControls" placeholder="Leave blank to use identified controls..." type="text">
+        </div>
+      </div>
+      <input type="hidden" id="gearType">
+      <input type="hidden" id="gearEditIndex">
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="backToGearStep1()">← Back</button>
+        <button class="btn-primary" id="gearSaveBtn" onclick="saveGear()">Add to Rig ✓</button>
+      </div>
+      <button class="btn-danger" id="deleteGearBtn" onclick="deleteGear()" style="display:none">Delete This Gear</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Controls (comma separated)</label>
-      <input class="form-input" id="gearControls" placeholder="e.g. Level, Tone, Gain" type="text">
-    </div>
-    <input type="hidden" id="gearType">
-    <input type="hidden" id="gearEditIndex">
-    <!-- Verify banner shown after save for pedals -->
-    <div class="verify-banner" id="verifyBanner">
-      <div class="verify-banner-title" id="verifyTitle"></div>
-      <div class="verify-banner-text" id="verifyText"></div>
-    </div>
-    <div class="modal-actions" id="gearModalActions">
-      <button class="btn-secondary" onclick="closeModal('addGearModal')">Cancel</button>
-      <button class="btn-primary" id="gearSaveBtn" onclick="saveGear()">Save</button>
-    </div>
-    <button class="btn-danger" id="deleteGearBtn" onclick="deleteGear()" style="display:none">Delete This Gear</button>
   </div>
 </div>
 
@@ -518,6 +542,9 @@ function renderGear() {
   });
 }
 
+// Enriched gear data from identification step
+let pendingGearData = null;
+
 function openAddGear(type) {
   document.getElementById('modalTitle').textContent = 'Add ' + type.charAt(0).toUpperCase() + type.slice(1);
   document.getElementById('gearName').value = '';
@@ -526,91 +553,144 @@ function openAddGear(type) {
   document.getElementById('gearType').value = type;
   document.getElementById('gearEditIndex').value = '-1';
   document.getElementById('deleteGearBtn').style.display = 'none';
-  document.getElementById('gearSaveBtn').textContent = 'Save';
-  document.getElementById('gearSaveBtn').disabled = false;
-  document.getElementById('gearModalActions').style.display = 'flex';
-  const banner = document.getElementById('verifyBanner');
-  banner.className = 'verify-banner';
+  document.getElementById('gearStep1').style.display = 'block';
+  document.getElementById('gearStep2').style.display = 'none';
+  document.getElementById('gearOverrides').style.display = 'none';
+  document.getElementById('overrideToggleBtn').textContent = '＋ Edit Details';
+  document.getElementById('verifyBanner').className = 'verify-banner';
+  document.getElementById('gearIdentifyBtn').disabled = false;
+  document.getElementById('gearIdentifyBtn').textContent = 'Identify →';
+  pendingGearData = null;
   document.getElementById('addGearModal').classList.add('open');
 }
 
 function openEditGear(type, index) {
   const item = gear[PLURAL[type]][index];
   document.getElementById('modalTitle').textContent = 'Edit ' + item.name;
-  document.getElementById('gearName').value = item.name;
-  document.getElementById('gearNotes').value = item.notes || '';
-  document.getElementById('gearControls').value = item.controls ? item.controls.join(', ') : '';
   document.getElementById('gearType').value = type;
   document.getElementById('gearEditIndex').value = index;
   document.getElementById('deleteGearBtn').style.display = 'block';
-  document.getElementById('gearSaveBtn').textContent = 'Save';
-  document.getElementById('gearSaveBtn').disabled = false;
-  document.getElementById('gearModalActions').style.display = 'flex';
-  const banner = document.getElementById('verifyBanner');
-  banner.className = 'verify-banner';
+  // Go straight to step 2 with existing data
+  document.getElementById('gearStep1').style.display = 'none';
+  document.getElementById('gearStep2').style.display = 'block';
+  document.getElementById('gearConfirmName').textContent = item.name;
+  document.getElementById('gearConfirmDesc').textContent = item.notes || '';
+  document.getElementById('gearConfirmControls').textContent = item.controls?.length ? 'Controls: ' + item.controls.join(', ') : '';
+  // Show overrides pre-filled
+  document.getElementById('gearOverrides').style.display = 'block';
+  document.getElementById('overrideToggleBtn').textContent = '− Hide Details';
+  document.getElementById('gearNotes').value = item.notes || '';
+  document.getElementById('gearControls').value = item.controls ? item.controls.join(', ') : '';
+  pendingGearData = { name: item.name, notes: item.notes, controls: item.controls };
   document.getElementById('addGearModal').classList.add('open');
 }
 
-async function saveGear() {
+function backToGearStep1() {
+  document.getElementById('gearStep1').style.display = 'block';
+  document.getElementById('gearStep2').style.display = 'none';
+  document.getElementById('verifyBanner').className = 'verify-banner';
+  document.getElementById('gearIdentifyBtn').disabled = false;
+  document.getElementById('gearIdentifyBtn').textContent = 'Identify →';
+  pendingGearData = null;
+}
+
+function toggleGearOverrides() {
+  const el = document.getElementById('gearOverrides');
+  const btn = document.getElementById('overrideToggleBtn');
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '＋ Edit Details' : '− Hide Details';
+}
+
+async function identifyGear() {
   const name = document.getElementById('gearName').value.trim();
-  if (!name) { alert('Please enter a name'); return; }
+  if (!name) { alert('Enter a gear name first'); return; }
+
+  const type = document.getElementById('gearType').value;
+  const btn = document.getElementById('gearIdentifyBtn');
+  const banner = document.getElementById('verifyBanner');
+
+  btn.disabled = true;
+  btn.textContent = 'Identifying...';
+  banner.className = 'verify-banner visible success';
+  document.getElementById('verifyTitle').textContent = '⏳ Looking up ' + name + '...';
+  document.getElementById('verifyText').textContent = 'Checking knowledge base...';
+
+  if (!apiKey) {
+    // No API key — just save with name only
+    pendingGearData = { name, notes: '', controls: [] };
+    showGearStep2(name, 'No API key set — gear saved with name only. Add a key to get full identification.', [], false);
+    return;
+  }
+
+  try {
+    const typeLabel = type === 'guitar' ? 'guitar' : type === 'amp' ? 'guitar amplifier' : 'guitar pedal/effect';
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: `Identify this ${typeLabel}: "${name}". Respond ONLY with valid JSON, no markdown, no backticks:
+{"recognized":true,"fullName":"Complete proper model name","notes":"2 sentences about its sonic character and typical use in a rig.","controls":["Knob1","Knob2","Knob3"],"confirmation":"One sentence starting with Got it — describing what makes this gear special."}
+Be specific to this exact model. Only list controls that physically exist on this unit. If unrecognized set recognized to false and do your best.` }]
+      })
+    });
+    const raw = await res.text();
+    const data = JSON.parse(raw);
+    if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+    if (data.usage) trackUsage('Gear ID: ' + name.substring(0, 20), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
+    const text = data.content[0].text.replace(/```json|```/g, '').trim();
+    const enriched = JSON.parse(text);
+    pendingGearData = { name: enriched.fullName || name, notes: enriched.notes || '', controls: enriched.controls || [] };
+    showGearStep2(enriched.fullName || name, enriched.confirmation || 'Identified.', enriched.controls || [], enriched.recognized);
+  } catch(e) {
+    banner.className = 'verify-banner visible error';
+    document.getElementById('verifyTitle').textContent = '⚠ Could not identify';
+    document.getElementById('verifyText').textContent = e.message + ' — you can still save manually.';
+    pendingGearData = { name, notes: '', controls: [] };
+    // Show a continue button
+    btn.textContent = 'Save Anyway →';
+    btn.disabled = false;
+    btn.onclick = () => showGearStep2(name, '', [], false);
+  }
+}
+
+function showGearStep2(name, confirmation, controls, recognized) {
+  document.getElementById('gearConfirmName').textContent = name;
+  document.getElementById('gearConfirmDesc').textContent = confirmation;
+  document.getElementById('gearConfirmControls').textContent = controls.length ? 'Controls: ' + controls.join(', ') : '';
+  // Pre-fill override fields
+  document.getElementById('gearNotes').value = pendingGearData?.notes || '';
+  document.getElementById('gearControls').value = controls.join(', ');
+  document.getElementById('verifyBanner').className = 'verify-banner';
+  document.getElementById('gearStep1').style.display = 'none';
+  document.getElementById('gearStep2').style.display = 'block';
+}
+
+function saveGear() {
   const type = document.getElementById('gearType').value;
   const index = parseInt(document.getElementById('gearEditIndex').value);
   const isNew = index === -1;
+
+  // Use pending data, applying any manual overrides
+  const overrideNotes = document.getElementById('gearNotes').value.trim();
+  const overrideControls = document.getElementById('gearControls').value.split(',').map(s => s.trim()).filter(Boolean);
   const item = {
-    name,
-    notes: document.getElementById('gearNotes').value.trim(),
-    controls: document.getElementById('gearControls').value.split(',').map(s => s.trim()).filter(Boolean)
+    name: pendingGearData?.name || document.getElementById('gearName').value.trim(),
+    notes: overrideNotes || pendingGearData?.notes || '',
+    controls: overrideControls.length ? overrideControls : (pendingGearData?.controls || [])
   };
+
+  if (!item.name) { alert('Please enter a name'); return; }
+
   if (isNew) {
     gear[PLURAL[type]].push(item);
   } else {
     gear[PLURAL[type]][index] = item;
   }
   saveGearData();
-
-  // For pedals: run AI verification
-  if (type === 'pedal' && apiKey) {
-    const btn = document.getElementById('gearSaveBtn');
-    btn.textContent = 'Verifying...';
-    btn.disabled = true;
-    document.getElementById('gearModalActions').querySelector('.btn-secondary').textContent = 'Close';
-
-    const banner = document.getElementById('verifyBanner');
-    banner.className = 'verify-banner visible success';
-    document.getElementById('verifyTitle').textContent = '⏳ Checking pedal...';
-    document.getElementById('verifyText').textContent = 'Looking up your gear in the knowledge base...';
-
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 300,
-          messages: [{ role: 'user', content: `I just added this guitar pedal to my rig: "${name}". ${item.notes ? 'Notes: ' + item.notes : ''} ${item.controls.length ? 'Controls: ' + item.controls.join(', ') : ''}
-
-In 2-3 sentences, confirm you recognize this pedal and briefly describe its sonic character and what it's best used for. Be enthusiastic and specific. Start with "Got it —" and don't use markdown.` }]
-        })
-      });
-      const raw = await res.text();
-      const data = JSON.parse(raw);
-      if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
-      if (data.usage) trackUsage('Pedal verify: ' + name.substring(0,20), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
-      const reply = data.content[0].text;
-      banner.className = 'verify-banner visible success';
-      document.getElementById('verifyTitle').textContent = '✓ Pedal Recognized';
-      document.getElementById('verifyText').textContent = reply;
-    } catch(e) {
-      banner.className = 'verify-banner visible error';
-      document.getElementById('verifyTitle').textContent = 'Saved (verify failed)';
-      document.getElementById('verifyText').textContent = 'Pedal saved but could not reach API to verify. ' + e.message;
-    }
-
-    btn.style.display = 'none';
-  } else {
-    closeModal('addGearModal');
-  }
+  closeModal('addGearModal');
   renderGear();
 }
 
@@ -660,14 +740,12 @@ function saveApiKey() {
 }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
-  // reset verify banner when closing gear modal
   if (id === 'addGearModal') {
-    const banner = document.getElementById('verifyBanner');
-    banner.className = 'verify-banner';
-    document.getElementById('gearSaveBtn').style.display = '';
-    document.getElementById('gearSaveBtn').disabled = false;
-    document.getElementById('gearSaveBtn').textContent = 'Save';
-    document.getElementById('gearModalActions').querySelector('.btn-secondary').textContent = 'Cancel';
+    document.getElementById('gearIdentifyBtn').disabled = false;
+    document.getElementById('gearIdentifyBtn').textContent = 'Identify →';
+    document.getElementById('gearIdentifyBtn').onclick = identifyGear;
+    document.getElementById('verifyBanner').className = 'verify-banner';
+    pendingGearData = null;
   }
 }
 
@@ -776,7 +854,7 @@ ${gearContext}
 
 They want to play: "${song}"${style ? ` (specifically: ${style})` : ''}
 
-Give them a concise, practical tone guide using ONLY their actual gear listed above. Format your response with clear sections using ### headers. For each piece of gear, list specific knob positions (use clock positions like "9 o'clock", percentages, or descriptive terms like "noon", "dimed", "off"). Be specific and actionable. If a piece of gear isn't needed for this song, say so briefly. End with a quick tip on technique if relevant.`;
+Give them a concise, practical tone guide using ONLY their actual gear listed above. Format your response with clear sections using ### headers. For each piece of gear, ONLY suggest settings for controls that are explicitly listed — do not invent or add controls that aren't in the list. The Peavey Bandit 112 is always on Clean channel with NO Pre Gain and NO Post Gain — never suggest those. For each listed control, give specific positions (clock positions like "9 o'clock", or descriptive terms like "noon", "dimed", "off"). Be specific and actionable. If a piece of gear isn't needed for this song, say so briefly. End with a quick tip on technique if relevant.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
