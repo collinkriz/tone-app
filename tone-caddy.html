@@ -695,7 +695,7 @@ async function identifySong() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
-        messages: [{ role: 'user', content: `Identify this song or artist: "${query}". Respond ONLY with valid JSON, no markdown, no explanation, exactly this shape: {"title":"Song Title","artist":"Artist Name","year":"1995","genre":"Rock","notes":"One sentence about the guitar tone or sound."} If it's just an artist name with no specific song, pick their most iconic song. If you don't recognize it, use {"title":"${query}","artist":"Unknown","year":"","genre":"","notes":"Could not identify — proceeding with your input."}` }]
+        messages: [{ role: 'user', content: `Identify this song or artist: "${query}". Be generous — try partial titles, common misspellings, and alternate names. "Penny on a train track" is by Ben Kweller. "Teenage kicks" is The Undertones. Do your best to match it. Respond ONLY with valid JSON, no markdown, no backticks, no explanation, exactly this shape: {"title":"Song Title","artist":"Artist Name","year":"1995","genre":"Rock","notes":"One sentence about the guitar tone or sound of this specific song."} If it is just an artist name with no specific song, pick their most iconic or recognizable song. Only use Unknown artist if you truly have no idea what this could be.` }]
       })
     });
     const raw = await res.text();
@@ -780,8 +780,16 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
     currentToneText = data.content[0].text;
     currentToneHTML = formatResponse(currentToneText);
     const isFaved = isFavorited(song, style);
+    const songHeader = confirmedSongTitle ? `
+      <div style="padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--border);">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Now Playing</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--text);line-height:1.1;">${confirmedSongTitle}</div>
+        ${confirmedSongArtist ? `<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">${confirmedSongArtist}</div>` : ''}
+        ${style ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${style}</div>` : ''}
+      </div>` : '';
     area.className = 'response-area visible';
     area.innerHTML = `
+      ${songHeader}
       <div class="response-actions">
         <button class="action-pill ${isFaved ? 'hearted' : ''}" id="heartBtn" onclick="toggleFavorite()">
           ${isFaved ? '♥' : '♡'} ${isFaved ? 'Saved' : 'Save'}
