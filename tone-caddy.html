@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tone Caddy">
+<title>Tone Caddy</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1814;
+    --surface2: #242018;
+    --border: #333028;
+    --amber: #e8a825;
+    --amber-dim: #a07318;
+    --amber-glow: rgba(232,168,37,0.12);
+    --red: #d94f3d;
+    --green: #5a9e6f;
+    --heart: #e85a6a;
+    --text: #e8e0d0;
+    --text-dim: #8a8070;
+    --text-muted: #554e42;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 999; opacity: 0.4; }
+  .status-bar { height: env(safe-area-inset-top, 20px); background: var(--bg); }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 10px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(15,14,12,0.95); backdrop-filter: blur(12px); z-index: 100; }
+  .logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 20px rgba(232,168,37,0.4); }
+  .logo span { color: var(--text-dim); font-weight: 400; }
+  .api-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .api-btn.set { border-color: var(--green); color: var(--green); }
+
+  /* NAV - 4 tabs now */
+  .nav { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); background: var(--surface); }
+  .nav-tab { background: none; border: none; color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 13px 4px; cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent; }
+  .nav-tab.active { color: var(--amber); border-bottom-color: var(--amber); background: var(--amber-glow); }
+
+  .page { display: none; padding: 20px; padding-bottom: 40px; }
+  .page.active { display: block; }
+
+  .section-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* GEAR CARDS */
+  .gear-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .gear-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .gear-card:active { border-color: var(--amber-dim); }
+  .gear-icon { width: 40px; height: 40px; border-radius: 6px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .gear-info { flex: 1; min-width: 0; }
+  .gear-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gear-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .gear-type-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 7px; border-radius: 3px; flex-shrink: 0; }
+  .badge-guitar { background: rgba(90,158,111,0.15); color: var(--green); border: 1px solid rgba(90,158,111,0.3); }
+  .badge-amp { background: rgba(232,168,37,0.1); color: var(--amber-dim); border: 1px solid rgba(232,168,37,0.25); }
+  .badge-pedal { background: rgba(217,79,61,0.1); color: var(--red); border: 1px solid rgba(217,79,61,0.25); }
+
+  .add-btn { width: 100%; background: none; border: 1px dashed var(--border); color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+  .add-btn:active { border-color: var(--amber); color: var(--amber); }
+
+  /* TONE PAGE */
+  .song-input-wrap { position: relative; margin-bottom: 16px; }
+  .song-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Barlow', sans-serif; font-size: 16px; padding: 16px 16px 16px 48px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+  .song-input:focus { border-color: var(--amber); }
+  .song-input::placeholder { color: var(--text-muted); }
+  .song-input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; pointer-events: none; }
+
+  .get-tone-btn { width: 100%; background: var(--amber); border: none; border-radius: 8px; color: #0f0e0c; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; padding: 16px; cursor: pointer; transition: all 0.15s; margin-bottom: 24px; }
+  .get-tone-btn:active { transform: scale(0.98); background: var(--amber-dim); }
+  .get-tone-btn:disabled { background: var(--surface2); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  /* RESPONSE AREA */
+  .response-area { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px; min-height: 60px; display: none; }
+  .response-area.visible { display: block; }
+  .response-area.loading { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-muted); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESPONSE ACTION BAR */
+  .response-actions { display: flex; gap: 10px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .action-pill { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); cursor: pointer; transition: all 0.2s; }
+  .action-pill:active { border-color: var(--amber); color: var(--amber); }
+  .action-pill.hearted { border-color: var(--heart); color: var(--heart); background: rgba(232,90,106,0.08); }
+  .action-pill.info-active { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
+
+  .response-content { font-size: 15px; line-height: 1.7; color: var(--text); }
+  .response-content h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); margin: 16px 0 8px; }
+  .response-content h3:first-child { margin-top: 0; }
+  .response-content p { margin-bottom: 10px; }
+  .response-content p:last-child { margin-bottom: 0; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-name { color: var(--text-dim); }
+  .setting-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; color: var(--amber); letter-spacing: 0.5px; }
+
+  /* INFO PANEL */
+  .info-panel { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 14px; display: none; }
+  .info-panel.visible { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .info-panel-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--amber-dim); margin-bottom: 10px; }
+  .info-panel-text { font-size: 14px; line-height: 1.75; color: var(--text-dim); }
+
+  /* FAVORITES PAGE */
+  .fav-empty { text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 14px; line-height: 2; }
+  .fav-empty .icon { font-size: 40px; margin-bottom: 12px; }
+  .fav-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s; }
+  .fav-card:active { border-color: var(--amber-dim); }
+  .fav-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+  .fav-song-name { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 900; letter-spacing: 0.5px; color: var(--text); flex: 1; }
+  .fav-song-style { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .fav-date { font-size: 11px; color: var(--text-muted); flex-shrink: 0; margin-left: 10px; margin-top: 2px; }
+  .fav-preview { font-size: 13px; color: var(--text-dim); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .fav-heart-remove { background: none; border: none; color: var(--heart); font-size: 18px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+
+  /* SIGNAL CHAIN PAGE */
+  .signal-chain { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 16px 0 8px; scrollbar-width: none; margin-bottom: 20px; }
+  .signal-chain::-webkit-scrollbar { display: none; }
+  .chain-node { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; text-align: center; font-size: 18px; line-height: 1; }
+  .chain-arrow { flex-shrink: 0; color: var(--text-muted); font-size: 14px; }
+
+  /* PEDAL VERIFY BANNER */
+  .verify-banner { border-radius: 8px; padding: 14px 16px; margin-top: 12px; display: none; animation: fadeIn 0.3s ease; }
+  .verify-banner.visible { display: block; }
+  .verify-banner.success { background: rgba(90,158,111,0.1); border: 1px solid rgba(90,158,111,0.3); }
+  .verify-banner.error { background: rgba(217,79,61,0.08); border: 1px solid rgba(217,79,61,0.25); }
+  .verify-banner-title { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .verify-banner.success .verify-banner-title { color: var(--green); }
+  .verify-banner.error .verify-banner-title { color: var(--red); }
+  .verify-banner-text { font-size: 13px; line-height: 1.6; color: var(--text-dim); }
+
+  /* MODALS */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: flex-end; padding-bottom: env(safe-area-inset-bottom, 0); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; padding: 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; color: var(--amber); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .form-input, .form-select, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'Barlow', sans-serif; font-size: 16px; padding: 12px 14px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--amber); }
+  .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23554e42' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-primary { flex: 1; background: var(--amber); border: none; border-radius: 8px; color: #0f0e0c; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; padding: 14px; cursor: pointer; }
+  .btn-secondary { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 14px 20px; cursor: pointer; }
+  .btn-danger { background: rgba(217,79,61,0.1); border: 1px solid rgba(217,79,61,0.3); border-radius: 8px; color: var(--red); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; margin-top: 12px; width: 100%; }
+
+  .safe-bottom { height: env(safe-area-inset-bottom, 16px); }
+  .empty-state { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="status-bar"></div>
+<div class="header">
+  <div class="logo">Tone<span>Caddy</span></div>
+  <button class="api-btn" id="apiToggle" onclick="toggleApiModal()">API Key</button>
+</div>
+
+<nav class="nav">
+  <button class="nav-tab active" onclick="showPage('tone',this)">🎸 Tone</button>
+  <button class="nav-tab" onclick="showPage('favorites',this)">♥ Library</button>
+  <button class="nav-tab" onclick="showPage('gear',this)">⚙️ Gear</button>
+  <button class="nav-tab" onclick="showPage('chain',this)">🔗 Chain</button>
+</nav>
+
+<!-- TONE PAGE -->
+<div class="page active" id="page-tone">
+  <div style="height:20px"></div>
+  <div class="section-label">Song or Artist</div>
+  <div class="song-input-wrap">
+    <span class="song-input-icon">🎵</span>
+    <input class="song-input" id="songInput" type="text" placeholder="e.g. Champagne Supernova, Oasis" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="form-group" style="margin-bottom:16px">
+    <div class="form-label">Style hint (optional)</div>
+    <input class="form-input" id="styleInput" type="text" placeholder="e.g. intro clean tone, solo crunch..." autocomplete="off">
+  </div>
+  <button class="get-tone-btn" id="toneBtn" onclick="getTone()">Get Tone Settings</button>
+  <div class="response-area" id="responseArea"></div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- FAVORITES PAGE -->
+<div class="page" id="page-favorites">
+  <div style="height:20px"></div>
+  <div class="section-label">Saved Songs</div>
+  <div id="favList"></div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- GEAR PAGE -->
+<div class="page" id="page-gear">
+  <div style="height:20px"></div>
+  <div class="section-label">Guitars</div>
+  <div class="gear-list" id="listGuitars"></div>
+  <button class="add-btn" onclick="openAddGear('guitar')">＋ Add Guitar</button>
+  <div class="section-label">Amps</div>
+  <div class="gear-list" id="listAmps"></div>
+  <button class="add-btn" onclick="openAddGear('amp')">＋ Add Amp</button>
+  <div class="section-label">Pedals</div>
+  <div class="gear-list" id="listPedals"></div>
+  <button class="add-btn" onclick="openAddGear('pedal')">＋ Add Pedal</button>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- CHAIN PAGE -->
+<div class="page" id="page-chain">
+  <div style="height:20px"></div>
+  <div class="section-label">Signal Path</div>
+  <div class="signal-chain" id="signalChain"></div>
+  <div class="section-label">Active Rig</div>
+  <div id="activeRigInfo" style="color:var(--text-dim); font-size:14px; line-height:1.8; margin-bottom:20px;"></div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ADD/EDIT GEAR MODAL -->
+<div class="modal-overlay" id="addGearModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Add Pedal</div>
+    <div class="form-group">
+      <label class="form-label">Name / Model</label>
+      <input class="form-input" id="gearName" placeholder="e.g. Boss BD-2 Blues Driver" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes / Key Features</label>
+      <textarea class="form-textarea" id="gearNotes" placeholder="e.g. Always-on light overdrive, warm breakup..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Controls (comma separated)</label>
+      <input class="form-input" id="gearControls" placeholder="e.g. Level, Tone, Gain" type="text">
+    </div>
+    <input type="hidden" id="gearType">
+    <input type="hidden" id="gearEditIndex">
+    <!-- Verify banner shown after save for pedals -->
+    <div class="verify-banner" id="verifyBanner">
+      <div class="verify-banner-title" id="verifyTitle"></div>
+      <div class="verify-banner-text" id="verifyText"></div>
+    </div>
+    <div class="modal-actions" id="gearModalActions">
+      <button class="btn-secondary" onclick="closeModal('addGearModal')">Cancel</button>
+      <button class="btn-primary" id="gearSaveBtn" onclick="saveGear()">Save</button>
+    </div>
+    <button class="btn-danger" id="deleteGearBtn" onclick="deleteGear()" style="display:none">Delete This Gear</button>
+  </div>
+</div>
+
+<!-- FAVORITE DETAIL MODAL -->
+<div class="modal-overlay" id="favModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="favModalTitle"></div>
+    <div id="favModalStyle" style="font-size:13px; color:var(--text-muted); margin-top:-14px; margin-bottom:16px;"></div>
+    <div id="favModalContent" style="font-size:14px; line-height:1.75; color:var(--text-dim);"></div>
+    <div id="favModalInfo" style="display:none; margin-top:16px;">
+      <div style="font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--amber-dim); margin-bottom:8px;">Why These Settings</div>
+      <div id="favModalInfoText" style="font-size:13px; line-height:1.75; color:var(--text-dim);"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('favModal')">Close</button>
+      <button class="btn-primary" onclick="reloadFavSong()">Load Song</button>
+    </div>
+    <button class="btn-danger" onclick="deleteFav()" style="margin-top:12px;">Remove from Library</button>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">API Key</div>
+    <p style="font-size:14px; color:var(--text-dim); margin-bottom:16px; line-height:1.7;">Get a free key at <strong style="color:var(--amber)">platform.anthropic.com</strong> → API Keys. Stored only on your device.</p>
+    <div class="form-group">
+      <label class="form-label">Anthropic API Key</label>
+      <input class="form-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('apiModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+const DEFAULT_GEAR = {
+  guitars: [
+    { name: "Epiphone Wildkat", notes: "Semi-hollow body, P90 pickups (bridge + neck). Warm, gritty tone with excellent feedback characteristics. Primary electric.", controls: ["Volume", "Tone", "Pickup Selector"] },
+    { name: "Takamine GD71CE-BSB", notes: "Acoustic-electric, BSB sunburst. Runs direct to PA via Boss AD-2 preamp/DI. Used for acoustic songs.", controls: ["Volume", "Bass", "Mid", "Treble"] }
+  ],
+  amps: [
+    { name: "Peavey Bandit 112", notes: "Solid state 80W 1x12 combo. Clean and Lead channels. Versatile gigging amp.", controls: ["Pre Gain", "Post Gain", "Bass", "Mid", "Treble", "Resonance", "Presence", "Volume", "Channel"] }
+  ],
+  pedals: [
+    { name: "Boss BD-2 Blues Driver", notes: "Always-on for base electric tone. Light hair/grind, keeps amp clean channel lively.", controls: ["Level", "Tone", "Gain"] },
+    { name: "Boss DS-1 Distortion", notes: "Heavier songs (Ramones, White Stripes, Pixies). Stacks after BD-2 for aggressive crunch.", controls: ["Level", "Tone", "Dist"] },
+    { name: "Boss DD-3T Digital Delay", notes: "End of chain for slap or longer repeats. Space/ambience on specific songs.", controls: ["E.Level", "F.Back", "D.Time", "Mode"] },
+    { name: "Boss AD-2 Acoustic Preamp", notes: "Used with Takamine acoustic to PA. Not in main electric chain.", controls: ["Volume", "Bass", "Mid", "Treble", "Reverb", "Chorus"] }
+  ]
+};
+
+let gear = JSON.parse(localStorage.getItem('tc_gear') || 'null') || DEFAULT_GEAR;
+let apiKey = localStorage.getItem('tc_apikey') || '';
+let favorites = JSON.parse(localStorage.getItem('tc_favorites') || '[]');
+
+// Current response state
+let currentSong = '';
+let currentStyle = '';
+let currentToneHTML = '';
+let currentToneText = '';
+let currentInfoText = '';
+let currentFavIndex = -1;
+
+function saveGearData() { localStorage.setItem('tc_gear', JSON.stringify(gear)); }
+function saveFavorites() { localStorage.setItem('tc_favorites', JSON.stringify(favorites)); }
+
+// ===== PAGES =====
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'gear') renderGear();
+  if (name === 'chain') renderChain();
+  if (name === 'favorites') renderFavorites();
+}
+
+// ===== GEAR =====
+const ICONS = { guitar: '🎸', amp: '🔊', pedal: '🎛️' };
+const BADGE_CLASS = { guitar: 'badge-guitar', amp: 'badge-amp', pedal: 'badge-pedal' };
+const LIST_IDS = { guitar: 'listGuitars', amp: 'listAmps', pedal: 'listPedals' };
+const PLURAL = { guitar: 'guitars', amp: 'amps', pedal: 'pedals' };
+
+function renderGear() {
+  ['guitar','amp','pedal'].forEach(type => {
+    const el = document.getElementById(LIST_IDS[type]);
+    const items = gear[PLURAL[type]];
+    if (!items.length) {
+      el.innerHTML = `<div class="empty-state"><div class="icon">${ICONS[type]}</div>No ${PLURAL[type]} added yet</div>`;
+      return;
+    }
+    el.innerHTML = items.map((g,i) => `
+      <div class="gear-card" onclick="openEditGear('${type}',${i})">
+        <div class="gear-icon">${ICONS[type]}</div>
+        <div class="gear-info">
+          <div class="gear-name">${g.name}</div>
+          <div class="gear-sub">${g.controls ? g.controls.slice(0,4).join(' · ') : ''}</div>
+        </div>
+        <span class="gear-type-badge ${BADGE_CLASS[type]}">${type}</span>
+      </div>
+    `).join('');
+  });
+}
+
+function openAddGear(type) {
+  document.getElementById('modalTitle').textContent = 'Add ' + type.charAt(0).toUpperCase() + type.slice(1);
+  document.getElementById('gearName').value = '';
+  document.getElementById('gearNotes').value = '';
+  document.getElementById('gearControls').value = '';
+  document.getElementById('gearType').value = type;
+  document.getElementById('gearEditIndex').value = '-1';
+  document.getElementById('deleteGearBtn').style.display = 'none';
+  document.getElementById('gearSaveBtn').textContent = 'Save';
+  document.getElementById('gearSaveBtn').disabled = false;
+  document.getElementById('gearModalActions').style.display = 'flex';
+  const banner = document.getElementById('verifyBanner');
+  banner.className = 'verify-banner';
+  document.getElementById('addGearModal').classList.add('open');
+}
+
+function openEditGear(type, index) {
+  const item = gear[PLURAL[type]][index];
+  document.getElementById('modalTitle').textContent = 'Edit ' + item.name;
+  document.getElementById('gearName').value = item.name;
+  document.getElementById('gearNotes').value = item.notes || '';
+  document.getElementById('gearControls').value = item.controls ? item.controls.join(', ') : '';
+  document.getElementById('gearType').value = type;
+  document.getElementById('gearEditIndex').value = index;
+  document.getElementById('deleteGearBtn').style.display = 'block';
+  document.getElementById('gearSaveBtn').textContent = 'Save';
+  document.getElementById('gearSaveBtn').disabled = false;
+  document.getElementById('gearModalActions').style.display = 'flex';
+  const banner = document.getElementById('verifyBanner');
+  banner.className = 'verify-banner';
+  document.getElementById('addGearModal').classList.add('open');
+}
+
+async function saveGear() {
+  const name = document.getElementById('gearName').value.trim();
+  if (!name) { alert('Please enter a name'); return; }
+  const type = document.getElementById('gearType').value;
+  const index = parseInt(document.getElementById('gearEditIndex').value);
+  const isNew = index === -1;
+  const item = {
+    name,
+    notes: document.getElementById('gearNotes').value.trim(),
+    controls: document.getElementById('gearControls').value.split(',').map(s => s.trim()).filter(Boolean)
+  };
+  if (isNew) {
+    gear[PLURAL[type]].push(item);
+  } else {
+    gear[PLURAL[type]][index] = item;
+  }
+  saveGearData();
+
+  // For pedals: run AI verification
+  if (type === 'pedal' && apiKey) {
+    const btn = document.getElementById('gearSaveBtn');
+    btn.textContent = 'Verifying...';
+    btn.disabled = true;
+    document.getElementById('gearModalActions').querySelector('.btn-secondary').textContent = 'Close';
+
+    const banner = document.getElementById('verifyBanner');
+    banner.className = 'verify-banner visible success';
+    document.getElementById('verifyTitle').textContent = '⏳ Checking pedal...';
+    document.getElementById('verifyText').textContent = 'Looking up your gear in the knowledge base...';
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          messages: [{ role: 'user', content: `I just added this guitar pedal to my rig: "${name}". ${item.notes ? 'Notes: ' + item.notes : ''} ${item.controls.length ? 'Controls: ' + item.controls.join(', ') : ''}
+
+In 2-3 sentences, confirm you recognize this pedal and briefly describe its sonic character and what it's best used for. Be enthusiastic and specific. Start with "Got it —" and don't use markdown.` }]
+        })
+      });
+      const raw = await res.text();
+      const data = JSON.parse(raw);
+      if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+      const reply = data.content[0].text;
+      banner.className = 'verify-banner visible success';
+      document.getElementById('verifyTitle').textContent = '✓ Pedal Recognized';
+      document.getElementById('verifyText').textContent = reply;
+    } catch(e) {
+      banner.className = 'verify-banner visible error';
+      document.getElementById('verifyTitle').textContent = 'Saved (verify failed)';
+      document.getElementById('verifyText').textContent = 'Pedal saved but could not reach API to verify. ' + e.message;
+    }
+
+    btn.style.display = 'none';
+  } else {
+    closeModal('addGearModal');
+  }
+  renderGear();
+}
+
+function deleteGear() {
+  const type = document.getElementById('gearType').value;
+  const index = parseInt(document.getElementById('gearEditIndex').value);
+  if (confirm('Delete this gear?')) {
+    gear[PLURAL[type]].splice(index, 1);
+    saveGearData();
+    closeModal('addGearModal');
+    renderGear();
+  }
+}
+
+// ===== CHAIN =====
+function renderChain() {
+  const chain = document.getElementById('signalChain');
+  const info = document.getElementById('activeRigInfo');
+  const nodes = [];
+  gear.guitars.forEach(g => nodes.push({ icon: '🎸', label: g.name.split(' ').slice(-1)[0] }));
+  gear.pedals.filter(p => !p.name.includes('AD-2')).forEach(p => nodes.push({ icon: '🎛️', label: p.name.replace('Boss ','').split(' ')[0] }));
+  gear.amps.forEach(a => nodes.push({ icon: '🔊', label: a.name.split(' ').slice(-1)[0] }));
+  chain.innerHTML = nodes.map((n,i) =>
+    `<div class="chain-node">${n.icon}<div style="font-size:9px;color:var(--text-muted);margin-top:4px;">${n.label.substring(0,7)}</div></div>` +
+    (i < nodes.length-1 ? '<div class="chain-arrow">→</div>' : '')
+  ).join('');
+  const allGear = [
+    ...gear.guitars.map(g => `<strong style="color:var(--text)">${g.name}</strong> — ${(g.notes||'').substring(0,80)}...`),
+    ...gear.amps.map(g => `<strong style="color:var(--text)">${g.name}</strong> — ${(g.notes||'').substring(0,80)}...`),
+    ...gear.pedals.map(g => `<strong style="color:var(--text)">${g.name}</strong> — ${(g.notes||'').substring(0,80)}...`),
+  ];
+  info.innerHTML = allGear.join('<br><br>');
+}
+
+// ===== API KEY =====
+function toggleApiModal() {
+  document.getElementById('apiKeyInput').value = apiKey;
+  document.getElementById('apiModal').classList.add('open');
+}
+function saveApiKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  localStorage.setItem('tc_apikey', apiKey);
+  const btn = document.getElementById('apiToggle');
+  btn.classList.toggle('set', !!apiKey);
+  btn.textContent = apiKey ? '🔑 Set' : 'API Key';
+  closeModal('apiModal');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // reset verify banner when closing gear modal
+  if (id === 'addGearModal') {
+    const banner = document.getElementById('verifyBanner');
+    banner.className = 'verify-banner';
+    document.getElementById('gearSaveBtn').style.display = '';
+    document.getElementById('gearSaveBtn').disabled = false;
+    document.getElementById('gearSaveBtn').textContent = 'Save';
+    document.getElementById('gearModalActions').querySelector('.btn-secondary').textContent = 'Cancel';
+  }
+}
+
+// ===== TONE ENGINE =====
+async function getTone() {
+  const song = document.getElementById('songInput').value.trim();
+  if (!song) { alert('Enter a song or artist name'); return; }
+  if (!apiKey) { alert('Add your Anthropic API key first'); toggleApiModal(); return; }
+
+  const style = document.getElementById('styleInput').value.trim();
+  currentSong = song;
+  currentStyle = style;
+  currentToneText = '';
+  currentToneHTML = '';
+  currentInfoText = '';
+
+  const btn = document.getElementById('toneBtn');
+  const area = document.getElementById('responseArea');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+  area.className = 'response-area visible loading';
+  area.innerHTML = '<div class="spinner"></div> Getting tone...';
+
+  const gearContext = buildGearContext();
+  const prompt = `You are an expert guitar tone advisor. The guitarist has this specific gear:
+
+${gearContext}
+
+They want to play: "${song}"${style ? ` (specifically: ${style})` : ''}
+
+Give them a concise, practical tone guide using ONLY their actual gear listed above. Format your response with clear sections using ### headers. For each piece of gear, list specific knob positions (use clock positions like "9 o'clock", percentages, or descriptive terms like "noon", "dimed", "off"). Be specific and actionable. If a piece of gear isn't needed for this song, say so briefly. End with a quick tip on technique if relevant.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); } catch(e) { throw new Error('Bad JSON (status ' + res.status + '): ' + raw.substring(0, 300)); }
+    if (!res.ok || data.type === 'error') throw new Error('API error (status ' + res.status + '): ' + JSON.stringify(data).substring(0, 300));
+    if (!data.content || !data.content[0] || !data.content[0].text) throw new Error('Unexpected shape (status ' + res.status + '): ' + raw.substring(0, 300));
+    currentToneText = data.content[0].text;
+    currentToneHTML = formatResponse(currentToneText);
+    const isFaved = isFavorited(song, style);
+    area.className = 'response-area visible';
+    area.innerHTML = `
+      <div class="response-actions">
+        <button class="action-pill ${isFaved ? 'hearted' : ''}" id="heartBtn" onclick="toggleFavorite()">
+          ${isFaved ? '♥' : '♡'} ${isFaved ? 'Saved' : 'Save'}
+        </button>
+        <button class="action-pill" id="infoBtn" onclick="toggleInfo()">ℹ Why These Settings</button>
+      </div>
+      <div class="response-content" id="toneContent">${currentToneHTML}</div>
+      <div class="info-panel" id="infoPanel">
+        <div class="info-panel-label">Why These Settings</div>
+        <div class="info-panel-text" id="infoPanelText"><div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:13px;"><div class="spinner"></div> Loading explanation...</div></div>
+      </div>
+    `;
+  } catch(err) {
+    area.className = 'response-area visible';
+    area.innerHTML = `<div style="color:var(--red);font-size:14px">Error: ${err.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Get Tone Settings';
+  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function toggleInfo() {
+  const panel = document.getElementById('infoPanel');
+  const btn = document.getElementById('infoBtn');
+  const isOpen = panel.classList.contains('visible');
+
+  if (isOpen) {
+    panel.classList.remove('visible');
+    btn.classList.remove('info-active');
+    return;
+  }
+
+  panel.classList.add('visible');
+  btn.classList.add('info-active');
+
+  // Already fetched
+  if (currentInfoText) {
+    document.getElementById('infoPanelText').innerHTML = currentInfoText;
+    return;
+  }
+
+  // Fetch explanation
+  const gearContext = buildGearContext();
+  const prompt = `You are a guitar tone educator. Here is a tone recommendation that was given for "${currentSong}"${currentStyle ? ` (${currentStyle})` : ''}:
+
+${currentToneText}
+
+In 3-5 sentences, explain WHY these settings achieve this sound. Talk about the sonic characteristics of the song/artist, how each pedal/amp setting contributes, and any key tonal principles at play. Write conversationally, like you're talking to a fellow guitarist. No markdown, no headers.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+    });
+    const raw = await res.text();
+    const data = JSON.parse(raw);
+    if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+    currentInfoText = data.content[0].text;
+    document.getElementById('infoPanelText').textContent = currentInfoText;
+  } catch(e) {
+    document.getElementById('infoPanelText').textContent = 'Could not load explanation: ' + e.message;
+  }
+}
+
+// ===== FAVORITES =====
+function isFavorited(song, style) {
+  return favorites.some(f => f.song === song && f.style === (style||''));
+}
+
+function toggleFavorite() {
+  const idx = favorites.findIndex(f => f.song === currentSong && f.style === (currentStyle||''));
+  if (idx >= 0) {
+    favorites.splice(idx, 1);
+    saveFavorites();
+    document.getElementById('heartBtn').className = 'action-pill';
+    document.getElementById('heartBtn').innerHTML = '♡ Save';
+  } else {
+    favorites.unshift({
+      song: currentSong,
+      style: currentStyle || '',
+      toneText: currentToneText,
+      toneHTML: currentToneHTML,
+      infoText: currentInfoText,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    });
+    saveFavorites();
+    document.getElementById('heartBtn').className = 'action-pill hearted';
+    document.getElementById('heartBtn').innerHTML = '♥ Saved';
+  }
+}
+
+function renderFavorites() {
+  const list = document.getElementById('favList');
+  if (!favorites.length) {
+    list.innerHTML = `<div class="fav-empty"><div class="icon">♡</div>No saved songs yet.<br>Hit the heart after getting<br>a tone recommendation.</div>`;
+    return;
+  }
+  list.innerHTML = favorites.map((f, i) => `
+    <div class="fav-card" onclick="openFav(${i})">
+      <div class="fav-card-header">
+        <div>
+          <div class="fav-song-name">${f.song}</div>
+          ${f.style ? `<div class="fav-song-style">${f.style}</div>` : ''}
+        </div>
+        <div class="fav-date">${f.date}</div>
+      </div>
+      <div class="fav-preview">${f.toneText.substring(0, 120)}...</div>
+    </div>
+  `).join('');
+}
+
+function openFav(i) {
+  currentFavIndex = i;
+  const f = favorites[i];
+  document.getElementById('favModalTitle').textContent = f.song;
+  document.getElementById('favModalStyle').textContent = f.style || '';
+  document.getElementById('favModalContent').innerHTML = '<div class="response-content">' + f.toneHTML + '</div>';
+  if (f.infoText) {
+    document.getElementById('favModalInfo').style.display = 'block';
+    document.getElementById('favModalInfoText').textContent = f.infoText;
+  } else {
+    document.getElementById('favModalInfo').style.display = 'none';
+  }
+  document.getElementById('favModal').classList.add('open');
+}
+
+function reloadFavSong() {
+  const f = favorites[currentFavIndex];
+  document.getElementById('songInput').value = f.song;
+  document.getElementById('styleInput').value = f.style || '';
+  closeModal('favModal');
+  // Switch to tone tab
+  document.querySelectorAll('.nav-tab')[0].click();
+}
+
+function deleteFav() {
+  if (confirm('Remove from library?')) {
+    favorites.splice(currentFavIndex, 1);
+    saveFavorites();
+    closeModal('favModal');
+    renderFavorites();
+  }
+}
+
+// ===== HELPERS =====
+function buildGearContext() {
+  let ctx = '';
+  if (gear.guitars.length) ctx += 'GUITARS:\n' + gear.guitars.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n') + '\n\n';
+  if (gear.amps.length) ctx += 'AMPS:\n' + gear.amps.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n') + '\n\n';
+  if (gear.pedals.length) ctx += 'PEDALS (signal chain order):\n' + gear.pedals.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n');
+  return ctx;
+}
+
+function formatResponse(text) {
+  return text
+    .replace(/###\s*(.+)/g, '<h3>$1</h3>')
+    .replace(/##\s*(.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text)">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^(\s*[\w\s\/\(\)]+):\s*(.+)$/gm, (m, k, v) =>
+      `<div class="setting-row"><span class="setting-name">${k.trim()}</span><span class="setting-val">${v.trim()}</span></div>`)
+    .replace(/^[-•]\s+(.+)$/gm, '<div class="setting-row"><span class="setting-name">$1</span></div>')
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(.)/, '<p>$1') + '</p>';
+}
+
+// ===== INIT =====
+function init() {
+  const btn = document.getElementById('apiToggle');
+  if (apiKey) { btn.classList.add('set'); btn.textContent = '🔑 Set'; }
+  renderGear();
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+  });
+  document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') getTone(); });
+}
+
+init();
+</script>
+</body>
+</html>
