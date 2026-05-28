@@ -392,6 +392,19 @@ let confirmedSongArtist = '';
 function saveGearData() { localStorage.setItem('tc_gear', JSON.stringify(gear)); }
 function saveFavorites() { localStorage.setItem('tc_favorites', JSON.stringify(favorites)); }
 
+// ===== DATA MIGRATION =====
+function migrateGearData() {
+  let changed = false;
+  gear.amps = gear.amps.map(a => {
+    if (a.name === 'Peavey Bandit 112') {
+      changed = true;
+      return { name: "Peavey Bandit 112", notes: "Solid state 80W 1x12 combo. Always use the Clean channel — the Lead channel is not used. Overdrive and distortion come entirely from pedals. Clean channel has no Pre Gain.", controls: ["Volume", "Bass", "Mid", "Treble", "Resonance", "Presence"] };
+    }
+    return a;
+  });
+  if (changed) saveGearData();
+}
+
 // ===== USAGE TRACKING =====
 // Sonnet 4 pricing: $3/M input tokens, $15/M output tokens
 const PRICE_IN = 3 / 1_000_000;
@@ -964,6 +977,7 @@ function formatResponse(text) {
 function init() {
   const btn = document.getElementById('apiToggle');
   if (apiKey) { btn.classList.add('set'); btn.textContent = '🔑 Set'; }
+  migrateGearData();
   renderGear();
   renderGuitarSelector();
   updateUsageBadge();
