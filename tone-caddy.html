@@ -268,7 +268,7 @@
       </div>
       <div class="modal-actions" id="gearStep1Actions">
         <button class="btn-secondary" onclick="closeModal('addGearModal')">Cancel</button>
-        <button class="btn-primary" id="gearIdentifyBtn" onclick="identifyGear()">Identify →</button>
+        <button class="btn-primary" id="gearIdentifyBtn" onclick="identifyGear()">Check Gear →</button>
       </div>
     </div>
 
@@ -559,7 +559,7 @@ function openAddGear(type) {
   document.getElementById('overrideToggleBtn').textContent = '＋ Edit Details';
   document.getElementById('verifyBanner').className = 'verify-banner';
   document.getElementById('gearIdentifyBtn').disabled = false;
-  document.getElementById('gearIdentifyBtn').textContent = 'Identify →';
+  document.getElementById('gearIdentifyBtn').textContent = 'Check Gear →';
   pendingGearData = null;
   document.getElementById('addGearModal').classList.add('open');
 }
@@ -611,7 +611,7 @@ async function identifyGear() {
   const banner = document.getElementById('verifyBanner');
 
   btn.disabled = true;
-  btn.textContent = 'Identifying...';
+  btn.textContent = 'Checking...';
   banner.className = 'verify-banner visible success';
   document.getElementById('verifyTitle').textContent = '⏳ Looking up ' + name + '...';
   document.getElementById('verifyText').textContent = 'Checking knowledge base...';
@@ -660,6 +660,8 @@ function showGearStep2(name, confirmation, controls, recognized) {
   document.getElementById('gearConfirmName').textContent = name;
   document.getElementById('gearConfirmDesc').textContent = confirmation;
   document.getElementById('gearConfirmControls').textContent = controls.length ? 'Controls: ' + controls.join(', ') : '';
+  // Update the name input to the official identified name
+  document.getElementById('gearName').value = name;
   // Pre-fill override fields
   document.getElementById('gearNotes').value = pendingGearData?.notes || '';
   document.getElementById('gearControls').value = controls.join(', ');
@@ -677,7 +679,7 @@ function saveGear() {
   const overrideNotes = document.getElementById('gearNotes').value.trim();
   const overrideControls = document.getElementById('gearControls').value.split(',').map(s => s.trim()).filter(Boolean);
   const item = {
-    name: pendingGearData?.name || document.getElementById('gearName').value.trim(),
+    name: (pendingGearData?.name || document.getElementById('gearName').value).trim(),
     notes: overrideNotes || pendingGearData?.notes || '',
     controls: overrideControls.length ? overrideControls : (pendingGearData?.controls || [])
   };
@@ -742,7 +744,7 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('open');
   if (id === 'addGearModal') {
     document.getElementById('gearIdentifyBtn').disabled = false;
-    document.getElementById('gearIdentifyBtn').textContent = 'Identify →';
+    document.getElementById('gearIdentifyBtn').textContent = 'Check Gear →';
     document.getElementById('gearIdentifyBtn').onclick = identifyGear;
     document.getElementById('verifyBanner').className = 'verify-banner';
     pendingGearData = null;
