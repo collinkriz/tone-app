@@ -26,7 +26,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400; min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 999; opacity: 0.4; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none !important; z-index: 0; opacity: 0.4; }
   .status-bar { height: env(safe-area-inset-top, 20px); background: var(--bg); }
   .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 10px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(15,14,12,0.95); backdrop-filter: blur(12px); z-index: 100; }
   .logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 20px rgba(232,168,37,0.4); }
@@ -160,12 +160,12 @@
   .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
 
   /* CHATBOT FAB */
-  .chat-fab { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 20px rgba(232,168,37,0.4); z-index: 150; transition: transform 0.2s; }
+  .chat-fab { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 24px rgba(232,168,37,0.5); z-index: 998; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .chat-fab:active { transform: scale(0.92); }
-  .chat-fab.open { background: var(--surface2); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .chat-fab.open { display: none; }
 
   /* CHAT PANEL */
-  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 75vh; background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; z-index: 140; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 75vh; background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; z-index: 997; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
   .chat-panel.open { transform: translateY(0); }
   .chat-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .chat-panel-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); }
@@ -427,7 +427,10 @@
       <div class="chat-panel-title">Ask Tone Caddy</div>
       <div class="chat-panel-sub">Your gear-aware guitar advisor</div>
     </div>
-    <button class="chat-clear" onclick="clearChat()">Clear</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="chat-clear" onclick="clearChat()">Clear</button>
+      <button onclick="toggleChat()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;">✕</button>
+    </div>
   </div>
   <div class="chat-messages" id="chatMessages">
     <div class="chat-msg assistant">
@@ -1113,6 +1116,113 @@ function formatResponse(text) {
     .replace(/^(.)/, '<p>$1') + '</p>';
 }
 
+
+// ===== CHATBOT =====
+let chatHistory = [];
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+  document.getElementById('chatFab').classList.toggle('open', chatOpen);
+  if (chatOpen) {
+    setTimeout(() => document.getElementById('chatInput').focus(), 350);
+    scrollChatToBottom();
+  }
+}
+
+function scrollChatToBottom() {
+  const el = document.getElementById('chatMessages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chatMessages').innerHTML = `
+    <div class="chat-msg assistant">
+      <div class="chat-bubble">Hey! Ask me anything about your gear, tone, technique, or how to nail a specific sound. I know your full rig. 🎸</div>
+    </div>`;
+}
+
+function appendChatMsg(role, text) {
+  const el = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = `<div class="chat-bubble">${text.replace(/\n/g, '<br>')}</div>`;
+  el.appendChild(div);
+  scrollChatToBottom();
+  return div;
+}
+
+function showTyping() {
+  const el = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg assistant';
+  div.id = 'chatTyping';
+  div.innerHTML = `<div class="chat-bubble chat-typing"><div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div></div>`;
+  el.appendChild(div);
+  scrollChatToBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('chatTyping');
+  if (el) el.remove();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  if (!apiKey) { alert('Add your API key first'); toggleApiModal(); return; }
+
+  input.value = '';
+  document.getElementById('chatSend').disabled = true;
+
+  appendChatMsg('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+  showTyping();
+
+  // Build full gear context for system prompt
+  const allGear = [
+    ...gear.guitars.map(g => `- ${g.name} (guitar): ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`),
+    ...gear.amps.map(g => `- ${g.name} (amp): ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`),
+    ...gear.pedals.map(g => `- ${g.name} (pedal): ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`)
+  ].join('\n');
+
+  const systemPrompt = `You are Tone Caddy, a friendly expert guitar tone advisor built into a personal rig app. You know this guitarist's exact gear:
+
+${allGear}
+
+Keep answers concise and practical — this is a mobile chat UI. Use plain text, no markdown headers. Be conversational and enthusiastic about gear. If asked about settings always reference the specific controls on their actual gear.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: systemPrompt,
+        messages: chatHistory
+      })
+    });
+    const raw = await res.text();
+    const data = JSON.parse(raw);
+    removeTyping();
+    if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
+    if (data.usage) trackUsage('Chat', data.usage.input_tokens || 0, data.usage.output_tokens || 0);
+    const reply = data.content[0].text;
+    chatHistory.push({ role: 'assistant', content: reply });
+    appendChatMsg('assistant', reply);
+  } catch(e) {
+    removeTyping();
+    appendChatMsg('assistant', 'Sorry, something went wrong: ' + e.message);
+  }
+
+  document.getElementById('chatSend').disabled = false;
+  input.focus();
+}
+
 // ===== INIT =====
 function init() {
   const btn = document.getElementById('apiToggle');
@@ -1125,6 +1235,7 @@ function init() {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
   });
   document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') identifySong(); });
+  document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
 }
 
 init();
