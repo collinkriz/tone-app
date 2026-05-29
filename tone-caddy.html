@@ -32,7 +32,8 @@
     --text-muted: #887868;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400; min-height: 100vh; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400; min-height: 100vh; overflow-x: hidden; overscroll-behavior-y: none; }
+  body.modal-open { overflow: hidden; touch-action: none; }
   body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none !important; z-index: 0; opacity: 0.4; }
   .status-bar { height: env(safe-area-inset-top, 20px); background: var(--bg); }
   .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 10px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(15,14,12,0.95); backdrop-filter: blur(12px); z-index: 100; }
@@ -148,7 +149,7 @@
   /* MODALS */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: flex-end; padding-bottom: env(safe-area-inset-bottom, 0); }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; padding: 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; padding: 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
   @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
   .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; color: var(--amber); }
@@ -812,7 +813,7 @@ function renderUsageModal() {
 
 function openUsageModal() {
   renderUsageModal();
-  document.getElementById('usageModal').classList.add('open');
+  openModal('usageModal');
 }
 
 // ===== PAGES =====
@@ -872,7 +873,7 @@ function openAddGear(type) {
   document.getElementById('gearIdentifyBtn').disabled = false;
   document.getElementById('gearIdentifyBtn').textContent = 'Check Gear →';
   pendingGearData = null;
-  document.getElementById('addGearModal').classList.add('open');
+  openModal('addGearModal');
 }
 
 function openEditGear(type, index) {
@@ -893,7 +894,7 @@ function openEditGear(type, index) {
   document.getElementById('gearNotes').value = item.notes || '';
   document.getElementById('gearControls').value = item.controls ? item.controls.join(', ') : '';
   pendingGearData = { name: item.name, notes: item.notes, controls: item.controls };
-  document.getElementById('addGearModal').classList.add('open');
+  openModal('addGearModal');
 }
 
 function backToGearStep1() {
@@ -1101,7 +1102,7 @@ function openRigEditor() {
   rigEditorPending = [...(guitar.rigProfile || [])];
   document.getElementById('rigEditorTitle').textContent = guitar.name + ' · Rig';
   renderRigEditorPedals();
-  document.getElementById('rigEditorModal').classList.add('open');
+  openModal('rigEditorModal');
 }
 
 function renderRigEditorPedals() {
@@ -1149,13 +1150,13 @@ function openRigDetail(type, idx) {
   document.getElementById('rigDetailName').textContent = item.name;
   document.getElementById('rigDetailNotes').textContent = item.notes || 'No description.';
   document.getElementById('rigDetailControls').textContent = item.controls?.length ? item.controls.join(' · ') : 'No controls listed';
-  document.getElementById('rigDetailModal').classList.add('open');
+  openModal('rigDetailModal');
 }
 
 // ===== API KEY =====
 function toggleApiModal() {
   document.getElementById('apiKeyInput').value = apiKey;
-  document.getElementById('apiModal').classList.add('open');
+  openModal('apiModal');
 }
 function saveApiKey() {
   apiKey = document.getElementById('apiKeyInput').value.trim();
@@ -1167,8 +1168,17 @@ function saveApiKey() {
   if (banner) banner.style.display = apiKey ? 'none' : 'block';
   closeModal('apiModal');
 }
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.classList.add('modal-open');
+}
+
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
+  // Only remove modal-open if no other modals are open
+  if (!document.querySelector('.modal-overlay.open')) {
+    document.body.classList.remove('modal-open');
+  }
   if (id === 'addGearModal') {
     document.getElementById('gearIdentifyBtn').disabled = false;
     document.getElementById('gearIdentifyBtn').textContent = 'Check Gear →';
@@ -1545,7 +1555,7 @@ function openFav(i) {
   } else {
     document.getElementById('favModalInfo').style.display = 'none';
   }
-  document.getElementById('favModal').classList.add('open');
+  openModal('favModal');
 }
 
 function switchFavView(view, i) {
@@ -1889,7 +1899,18 @@ function init() {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
   });
 
-  // Swipe down from top of modal to close
+  // Block pull-to-refresh on iOS when any modal is open
+  document.addEventListener('touchmove', e => {
+    if (document.body.classList.contains('modal-open')) {
+      // Allow scrolling inside .modal elements, block everything else
+      const modal = e.target.closest('.modal');
+      if (!modal) {
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  // Swipe down to close — track on the modal overlay's dark background area
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     let startY = 0;
     let startX = 0;
@@ -1900,8 +1921,7 @@ function init() {
     overlay.addEventListener('touchend', e => {
       const dy = e.changedTouches[0].clientY - startY;
       const dx = Math.abs(e.changedTouches[0].clientX - startX);
-      // Only close if mostly vertical downward swipe of 80px+
-      if (dy > 80 && dx < 60) closeModal(overlay.id);
+      if (dy > 70 && dx < 50) closeModal(overlay.id);
     }, { passive: true });
   });
   document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') identifySong(); });
