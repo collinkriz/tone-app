@@ -980,7 +980,7 @@ function renderRigEditorPedals() {
   const allSorted = sortPedalsByChainLogic(gear.pedals);
   el.innerHTML = allSorted.map(p => {
     const active = rigEditorPending.some(n => n.trim().toLowerCase() === p.name.trim().toLowerCase());
-    const chainPos = ['Tuner','Comp','Wah','Boost','OD','Dist','Fuzz','Mod','Pitch','Delay','Reverb','DI'][getPedalChainOrder(p)] || 'FX';
+    const chainPos = ['Tuner','Comp','Wah','Boost','BD-2','TS Boost','OD','Dist','Fuzz','Mod','Pitch','Delay','Reverb','DI'][getPedalChainOrder(p)] || 'FX';
     return `<div onclick="toggleRigPedal('${p.name.replace(/'/g,"\\'")}', this)"
       style="display:flex;align-items:center;gap:12px;background:${active ? 'rgba(232,168,37,0.08)' : 'var(--surface2)'};border:1px solid ${active ? 'var(--amber-dim)' : 'var(--border)'};border-radius:8px;padding:12px 14px;cursor:pointer;transition:all 0.15s;">
       <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${active ? 'var(--amber)' : 'var(--border)'};background:${active ? 'var(--amber)' : 'none'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#0f0e0c;font-weight:700;">${active ? '✓' : ''}</div>
@@ -1347,25 +1347,67 @@ function deleteFav() {
 
 // ===== HELPERS =====
 
-// Standard signal chain order categories
+// Standard signal chain order — industry best practice
+// Tuner → Gate → Comp → Wah → Boost → OD/Drive → Dist → Fuzz → Mod → Pitch → Delay → Reverb → Loop → DI
 function getPedalChainOrder(pedal) {
   const name = pedal.name.toLowerCase();
   const notes = (pedal.notes || '').toLowerCase();
+
+  // Use name only for ambiguous terms like "boost" to avoid false matches in notes
+  const nameOnly = name;
   const combined = name + ' ' + notes;
 
-  if (/tuner/.test(combined)) return 0;
-  if (/compressor|sustainer|comp/.test(combined)) return 1;
-  if (/wah|cry baby|envelope/.test(combined)) return 2;
-  if (/boost|clean boost/.test(combined)) return 3;
-  if (/overdrive|blues driver|tube screamer|ts\d|bd-?2|od-?/.test(combined)) return 4;
-  if (/distortion|ds-?1|rat|big muff|fuzz face/.test(combined)) return 5;
-  if (/fuzz/.test(combined)) return 6;
-  if (/chorus|flanger|phaser|tremolo|vibrato|rotary/.test(combined)) return 7;
-  if (/pitch|octave|harmonizer/.test(combined)) return 8;
-  if (/delay|echo|dd-?\d/.test(combined)) return 9;
-  if (/reverb/.test(combined)) return 10;
-  if (/acoustic|preamp|di|direct/.test(combined)) return 11;
-  return 5; // default: treat as distortion/drive
+  // 0: Tuner — always first
+  if (/tuner|tu-\d/.test(combined)) return 0;
+
+  // 1: Noise gate — after tuner, before everything else
+  if (/noise gate|noise suppressor|hush|ns-2/.test(combined)) return 1;
+
+  // 2: Compressor / Limiter — before drives
+  if (/compressor|limiter|sustainer|dyna comp|cs-\d|optical comp/.test(combined)) return 2;
+
+  // 3: Wah / Filter — before drives for classic tone
+  if (/wah|cry baby|envelope filter|auto-?wah/.test(combined)) return 3;
+
+  // 4: Clean boost — before drives to push them
+  if (/clean boost|ep booster|micro amp/.test(nameOnly)) return 4;
+  if (/\bboost\b/.test(nameOnly) && !/overdrive|distortion|drive/.test(nameOnly)) return 4;
+
+  // 5: BD-2 always-on base tone — first in drive stack
+  if (/bd-?2|blues driver/.test(combined)) return 5;
+
+  // 6: Tube Screamer / TS-style — mid-hump after base drive, before harder distortion
+  if (/tube screamer|ts\s*\d|ts\s*mini|screamer/.test(combined)) return 6;
+
+  // 7: Other overdrives / light drives
+  if (/overdrive|od-?\d|klon|soul food|prince of tone|morning glory/.test(combined)) return 7;
+
+  // 8: Distortion — harder clipping after OD
+  if (/distortion|ds-?\d|\brat\b|pro co|turbo rat/.test(combined)) return 8;
+
+  // 9: Fuzz — Big Muff, fuzz face, etc. — can go before or after dist, conventional = after
+  if (/fuzz|big muff|muff\b|ram.?s head|tonebender/.test(combined)) return 9;
+
+  // 10: Modulation — after drives, before time-based
+  if (/chorus|flanger|phaser|phase 90|phase 45|small clone|julia|tremolo|vibrato|rotary|uni-?vibe|ce-\d|mxr m2[269]/.test(combined)) return 10;
+
+  // 11: Pitch / Harmony — after modulation
+  if (/pitch|octave|octavia|harmonizer|whammy|pog|hog|bass octave/.test(combined)) return 11;
+
+  // 12: Delay / Echo — time-based, near end
+  if (/delay|echo|memory|carbon copy|dd-?\d|el capistan|tape echo|slap-?back/.test(combined)) return 12;
+
+  // 13: Reverb — last time-based effect
+  if (/reverb|hall of fame|shimmer|spring reverb/.test(combined)) return 13;
+
+  // 14: Looper — always last in chain
+  if (/loop|looper|rc-\d|ditto/.test(combined)) return 14;
+
+  // 15: Acoustic preamp / DI — end of acoustic chain
+  if (/acoustic.*preamp|preamp.*acoustic|direct.*box|\bdi\b|venue di/.test(combined)) return 15;
+
+  // Default: place in OD zone as unknown drive — better than distortion zone
+  return 7;
 }
 
 function sortPedalsByChainLogic(pedals) {
