@@ -13,16 +13,16 @@
     --bg: #0f0e0c;
     --surface: #1a1814;
     --surface2: #242018;
-    --border: #333028;
+    --border: #3d3830;
     --amber: #e8a825;
-    --amber-dim: #a07318;
+    --amber-dim: #c4901f;
     --amber-glow: rgba(232,168,37,0.12);
     --red: #d94f3d;
     --green: #5a9e6f;
     --heart: #e85a6a;
-    --text: #e8e0d0;
-    --text-dim: #8a8070;
-    --text-muted: #554e42;
+    --text: #f0e8d8;
+    --text-dim: #b0a090;
+    --text-muted: #887868;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 400; min-height: 100vh; overflow-x: hidden; }
@@ -36,10 +36,10 @@
 
   /* NAV - 4 tabs now */
   .nav { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); background: var(--surface); }
-  .nav-tab { background: none; border: none; color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 13px 4px; cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent; }
+  .nav-tab { background: none; border: none; color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 13px 4px; cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent; }
   .nav-tab.active { color: var(--amber); border-bottom-color: var(--amber); background: var(--amber-glow); }
 
-  .page { display: none; padding: 20px; padding-bottom: 40px; }
+  .page { display: none; padding: 20px; padding-bottom: 90px; }
   .page.active { display: block; }
 
   .section-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
@@ -47,18 +47,18 @@
 
   /* GEAR CARDS */
   .gear-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-  .gear-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
-  .gear-card:active { border-color: var(--amber-dim); }
+  .gear-card { background: var(--surface2); border: 1px solid #4a4438; border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .gear-card:active { border-color: var(--amber); }
   .gear-icon { width: 40px; height: 40px; border-radius: 6px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
   .gear-info { flex: 1; min-width: 0; }
-  .gear-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .gear-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .gear-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: #f0e8d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gear-sub { font-size: 13px; color: #c8b89a; margin-top: 3px; }
   .gear-type-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 7px; border-radius: 3px; flex-shrink: 0; }
   .badge-guitar { background: rgba(90,158,111,0.15); color: var(--green); border: 1px solid rgba(90,158,111,0.3); }
   .badge-amp { background: rgba(232,168,37,0.1); color: var(--amber-dim); border: 1px solid rgba(232,168,37,0.25); }
   .badge-pedal { background: rgba(217,79,61,0.1); color: var(--red); border: 1px solid rgba(217,79,61,0.25); }
 
-  .add-btn { width: 100%; background: none; border: 1px dashed var(--border); color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+  .add-btn { width: 100%; background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
   .add-btn:active { border-color: var(--amber); color: var(--amber); }
 
   /* TONE PAGE */
@@ -116,10 +116,21 @@
   .fav-heart-remove { background: none; border: none; color: var(--heart); font-size: 18px; cursor: pointer; padding: 4px; flex-shrink: 0; }
 
   /* SIGNAL CHAIN PAGE */
-  .signal-chain { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 16px 0 8px; scrollbar-width: none; margin-bottom: 20px; }
+  .signal-chain { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 16px 0 12px; scrollbar-width: none; margin-bottom: 24px; }
   .signal-chain::-webkit-scrollbar { display: none; }
-  .chain-node { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; text-align: center; font-size: 18px; line-height: 1; }
-  .chain-arrow { flex-shrink: 0; color: var(--text-muted); font-size: 14px; }
+  .chain-node { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; text-align: center; min-width: 64px; cursor: default; }
+  .chain-node-icon { font-size: 22px; line-height: 1; }
+  .chain-node-label { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; color: #c8b89a; margin-top: 5px; letter-spacing: 0.3px; white-space: nowrap; }
+  .chain-arrow { flex-shrink: 0; color: var(--amber-dim); font-size: 18px; font-weight: 700; }
+
+  /* ACTIVE RIG CARDS */
+  .rig-card { background: var(--surface2); border: 1px solid #4a4438; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s; }
+  .rig-card:active { border-color: var(--amber); }
+  .rig-card-icon { font-size: 22px; flex-shrink: 0; width: 36px; text-align: center; }
+  .rig-card-info { flex: 1; min-width: 0; }
+  .rig-card-name { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: #f0e8d8; }
+  .rig-card-preview { font-size: 13px; color: #c8b89a; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rig-card-chevron { color: #c8b89a; font-size: 20px; flex-shrink: 0; }
 
   /* GUITAR SELECTOR */
   .guitar-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 9px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-dim); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
@@ -144,7 +155,7 @@
   .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; color: var(--amber); }
 
   .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .form-label { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
   .form-input, .form-select, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'Barlow', sans-serif; font-size: 16px; padding: 12px 14px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
   .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--amber); }
   .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
@@ -156,21 +167,21 @@
   .btn-danger { background: rgba(217,79,61,0.1); border: 1px solid rgba(217,79,61,0.3); border-radius: 8px; color: var(--red); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; margin-top: 12px; width: 100%; }
 
   .safe-bottom { height: env(safe-area-inset-bottom, 16px); }
-  .empty-state { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; }
+  .empty-state { text-align: center; padding: 32px 20px; color: var(--text-dim); font-size: 14px; line-height: 1.8; }
   .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
 
   /* CHATBOT FAB */
   .chat-fab { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 24px rgba(232,168,37,0.5); z-index: 998; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .chat-fab:active { transform: scale(0.92); }
-  .chat-fab.open { display: none; }
+  .chat-fab.open { display: none !important; }
 
   /* CHAT PANEL */
   .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 75vh; background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; z-index: 997; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
   .chat-panel.open { transform: translateY(0); }
   .chat-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .chat-panel-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); }
-  .chat-panel-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-  .chat-clear { background: none; border: none; color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; padding: 4px 8px; }
+  .chat-panel-sub { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+  .chat-clear { background: none; border: none; color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; padding: 4px 8px; }
 
   /* CHAT MESSAGES */
   .chat-messages { flex: 1; overflow-y: auto; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
@@ -180,7 +191,7 @@
   .chat-msg.assistant { align-self: flex-start; align-items: flex-start; }
   .chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.6; }
   .chat-msg.user .chat-bubble { background: var(--amber); color: #0f0e0c; border-bottom-right-radius: 4px; }
-  .chat-msg.assistant .chat-bubble { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .chat-msg.assistant .chat-bubble { background: var(--surface2); color: #f0e8d8; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
   .chat-typing { display: flex; gap: 4px; align-items: center; padding: 12px 14px; }
   .chat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: chatBounce 1.2s infinite; }
   .chat-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -203,7 +214,7 @@
 <div class="header">
   <div class="logo">Tone<span>Caddy</span></div>
   <div style="display:flex;gap:8px;align-items:center;">
-    <button class="api-btn" id="usageBadgeBtn" onclick="openUsageModal()" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;">$<span id="usageBadge">0.0000</span></button>
+    <button class="api-btn" id="usageBadgeBtn" onclick="openUsageModal()" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;"><span id="usageBadge">$0.0000</span></button>
     <button class="api-btn" id="apiToggle" onclick="toggleApiModal()">API Key</button>
   </div>
 </div>
@@ -212,19 +223,24 @@
   <button class="nav-tab active" onclick="showPage('tone',this)">🎸 Tone</button>
   <button class="nav-tab" onclick="showPage('favorites',this)">♥ Library</button>
   <button class="nav-tab" onclick="showPage('gear',this)">⚙️ Gear</button>
-  <button class="nav-tab" onclick="showPage('chain',this)">🔗 Chain</button>
+  <button class="nav-tab" onclick="showPage('chain',this)">🎛️ Rig</button>
 </nav>
 
 <!-- TONE PAGE -->
 <div class="page active" id="page-tone">
   <div style="height:20px"></div>
 
+  <!-- No API key banner -->
+  <div id="noKeyBanner" style="display:none; background:rgba(232,168,37,0.08); border:1px solid var(--amber-dim); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-size:14px; color:var(--text-dim); line-height:1.6;">
+    🔑 <strong style="color:var(--amber)">API key not set.</strong> Tap <strong style="color:var(--amber)">API Key</strong> in the header to add your Anthropic key before searching.
+  </div>
+
   <!-- STEP 1: Guitar selector -->
-  <div class="section-label">Guitar</div>
+  <div class="section-label">Step 1 · Guitar</div>
   <div id="guitarSelector" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;"></div>
 
   <!-- STEP 2: Song input -->
-  <div class="section-label">Song or Artist</div>
+  <div class="section-label">Step 2 · Song or Artist</div>
   <div class="song-input-wrap">
     <span class="song-input-icon">🎵</span>
     <input class="song-input" id="songInput" type="text" placeholder="e.g. Champagne Supernova, Oasis" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -233,16 +249,16 @@
     <div class="form-label">Style hint (optional)</div>
     <input class="form-input" id="styleInput" type="text" placeholder="e.g. intro clean tone, solo crunch..." autocomplete="off">
   </div>
-  <button class="get-tone-btn" id="toneBtn" onclick="identifySong()">Find Song</button>
+  <button class="get-tone-btn" id="toneBtn" onclick="identifySong()">Find Song →</button>
 
   <!-- Song confirm card (shown after identification) -->
   <div id="songConfirmArea" style="display:none; margin-bottom:20px;">
-    <div class="section-label">Confirm Song</div>
+    <div class="section-label">Step 3 · Confirm Song</div>
     <div id="songConfirmCard" style="background:var(--surface); border:1px solid var(--amber-dim); border-radius:10px; padding:16px; margin-bottom:12px;">
       <div style="font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--amber-dim); margin-bottom:8px;">Identified</div>
       <div id="songConfirmTitle" style="font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:900; color:var(--text); margin-bottom:2px;"></div>
       <div id="songConfirmArtist" style="font-size:14px; color:var(--text-dim); margin-bottom:8px;"></div>
-      <div id="songConfirmMeta" style="font-size:13px; color:var(--text-muted); line-height:1.6;"></div>
+      <div id="songConfirmMeta" style="font-size:13px; color:var(--text-dim); line-height:1.6;"></div>
     </div>
     <div style="display:flex; gap:10px;">
       <button class="btn-secondary" style="flex:1" onclick="resetSongSearch()">← Try Again</button>
@@ -251,6 +267,10 @@
   </div>
 
   <div class="response-area" id="responseArea"></div>
+  <!-- New Search button shown after results -->
+  <div id="newSearchRow" style="display:none; margin-top:16px;">
+    <button onclick="startNewSearch()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer;">← New Search</button>
+  </div>
   <div class="safe-bottom"></div>
 </div>
 
@@ -391,11 +411,29 @@
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Recent Calls</div>
     <div id="usageCallList" style="max-height:260px;overflow-y:auto;"></div>
 
-    <p style="font-size:11px;color:var(--text-muted);margin-top:14px;line-height:1.6;">Sonnet 4 · $3/M input · $15/M output. Tracked locally — verify at platform.anthropic.com.</p>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:14px;line-height:1.6;">Sonnet 4 · $3/M input · $15/M output. Tracked locally — verify at platform.anthropic.com.</p>
 
     <div class="modal-actions" style="margin-top:16px;">
-      <button class="btn-danger" style="margin:0;flex:1" onclick="resetUsage()">Reset Data</button>
       <button class="btn-primary" style="flex:2" onclick="closeModal('usageModal')">Done</button>
+    </div>
+    <button class="btn-danger" onclick="resetUsage()" style="margin-top:10px;">Reset All Usage Data</button>
+  </div>
+</div>
+
+<!-- RIG DETAIL MODAL -->
+<div class="modal-overlay" id="rigDetailModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="font-size:32px;" id="rigDetailIcon">🎸</div>
+      <div id="rigDetailName" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--amber);letter-spacing:0.5px;"></div>
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">About</div>
+    <div id="rigDetailNotes" style="font-size:14px;color:var(--text-dim);line-height:1.75;margin-bottom:20px;"></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Controls</div>
+    <div id="rigDetailControls" style="font-size:14px;color:var(--text);line-height:1.8;"></div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn-primary" onclick="closeModal('rigDetailModal')">Done</button>
     </div>
   </div>
 </div>
@@ -597,9 +635,9 @@ function renderGear() {
         <div class="gear-icon">${ICONS[type]}</div>
         <div class="gear-info">
           <div class="gear-name">${g.name}</div>
-          <div class="gear-sub">${g.controls ? g.controls.slice(0,4).join(' · ') : ''}</div>
+          <div class="gear-sub">${g.controls ? g.controls.slice(0,5).join(' · ') : ''}</div>
         </div>
-        <span class="gear-type-badge ${BADGE_CLASS[type]}">${type}</span>
+        <div style="color:var(--text-muted);font-size:18px;flex-shrink:0;">›</div>
       </div>
     `).join('');
   });
@@ -653,7 +691,7 @@ function backToGearStep1() {
   document.getElementById('gearStep2').style.display = 'none';
   document.getElementById('verifyBanner').className = 'verify-banner';
   document.getElementById('gearIdentifyBtn').disabled = false;
-  document.getElementById('gearIdentifyBtn').textContent = 'Identify →';
+  document.getElementById('gearIdentifyBtn').textContent = 'Check Gear →';
   pendingGearData = null;
 }
 
@@ -757,6 +795,7 @@ function saveGear() {
   saveGearData();
   closeModal('addGearModal');
   renderGear();
+  renderGuitarSelector();
 }
 
 function deleteGear() {
@@ -775,19 +814,58 @@ function renderChain() {
   const chain = document.getElementById('signalChain');
   const info = document.getElementById('activeRigInfo');
   const nodes = [];
-  gear.guitars.forEach(g => nodes.push({ icon: '🎸', label: g.name.split(' ').slice(-1)[0] }));
-  gear.pedals.filter(p => !p.name.includes('AD-2')).forEach(p => nodes.push({ icon: '🎛️', label: p.name.replace('Boss ','').split(' ')[0] }));
-  gear.amps.forEach(a => nodes.push({ icon: '🔊', label: a.name.split(' ').slice(-1)[0] }));
+
+  // Guitars
+  gear.guitars.forEach(g => nodes.push({ icon: '🎸', label: g.name.replace('Epiphone ','').replace('Takamine ','').split(' ')[0] }));
+  // Pedals (exclude acoustic/PA-only by checking notes)
+  gear.pedals.filter(p => !/(acoustic|PA|direct|DI)/i.test(p.notes)).forEach(p => {
+    const shortName = p.name.replace(/Boss |Ibanez |MXR |Electro-Harmonix |EHX /i, '').split(' ').slice(0,2).join(' ');
+    nodes.push({ icon: '🎛️', label: shortName });
+  });
+  // Amps
+  gear.amps.forEach(a => nodes.push({ icon: '🔊', label: a.name.split(' ').slice(0,2).join(' ') }));
+
   chain.innerHTML = nodes.map((n,i) =>
-    `<div class="chain-node">${n.icon}<div style="font-size:9px;color:var(--text-muted);margin-top:4px;">${n.label.substring(0,7)}</div></div>` +
+    `<div class="chain-node">
+      <div class="chain-node-icon">${n.icon}</div>
+      <div class="chain-node-label">${n.label}</div>
+    </div>` +
     (i < nodes.length-1 ? '<div class="chain-arrow">→</div>' : '')
   ).join('');
+
+  // Tappable rig cards
   const allGear = [
-    ...gear.guitars.map(g => `<strong style="color:var(--text)">${g.name}</strong> — ${(g.notes||'').substring(0,80)}...`),
-    ...gear.amps.map(g => `<strong style="color:var(--text)">${g.name}</strong> — ${(g.notes||'').substring(0,80)}...`),
-    ...gear.pedals.map(g => `<strong style="color:var(--text)">${g.name}</strong> — ${(g.notes||'').substring(0,80)}...`),
+    ...gear.guitars.map((g,i) => ({ icon:'🎸', item:g, type:'guitar', idx:i })),
+    ...gear.amps.map((g,i) => ({ icon:'🔊', item:g, type:'amp', idx:i })),
+    ...gear.pedals.map((g,i) => ({
+      icon:'🎛️',
+      item:g,
+      type:'pedal',
+      idx:i,
+      tag: /(acoustic|PA|direct|DI)/i.test(g.notes) ? '(Acoustic/PA)' : null
+    }))
   ];
-  info.innerHTML = allGear.join('<br><br>');
+
+  info.innerHTML = allGear.map(({icon, item, type, idx, tag}) => `
+    <div class="rig-card" onclick="openRigDetail('${type}',${idx})">
+      <div class="rig-card-icon">${icon}</div>
+      <div class="rig-card-info">
+        <div class="rig-card-name">${item.name}${tag ? ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">'+tag+'</span>' : ''}</div>
+        <div class="rig-card-preview">${(item.notes||'No description').substring(0,60)}...</div>
+      </div>
+      <div class="rig-card-chevron">›</div>
+    </div>
+  `).join('');
+}
+
+function openRigDetail(type, idx) {
+  const item = gear[PLURAL[type]][idx];
+  const icons = { guitar:'🎸', amp:'🔊', pedal:'🎛️' };
+  document.getElementById('rigDetailIcon').textContent = icons[type];
+  document.getElementById('rigDetailName').textContent = item.name;
+  document.getElementById('rigDetailNotes').textContent = item.notes || 'No description.';
+  document.getElementById('rigDetailControls').textContent = item.controls?.length ? item.controls.join(' · ') : 'No controls listed';
+  document.getElementById('rigDetailModal').classList.add('open');
 }
 
 // ===== API KEY =====
@@ -801,6 +879,8 @@ function saveApiKey() {
   const btn = document.getElementById('apiToggle');
   btn.classList.toggle('set', !!apiKey);
   btn.textContent = apiKey ? '🔑 Set' : 'API Key';
+  const banner = document.getElementById('noKeyBanner');
+  if (banner) banner.style.display = apiKey ? 'none' : 'block';
   closeModal('apiModal');
 }
 function closeModal(id) {
@@ -883,10 +963,26 @@ async function identifySong() {
   btn.textContent = 'Find Song';
 }
 
+function startNewSearch() {
+  document.getElementById('songInput').value = '';
+  document.getElementById('styleInput').value = '';
+  document.getElementById('songConfirmArea').style.display = 'none';
+  document.getElementById('toneBtn').style.display = '';
+  document.getElementById('responseArea').className = 'response-area';
+  document.getElementById('newSearchRow').style.display = 'none';
+  confirmedSongTitle = '';
+  confirmedSongArtist = '';
+  currentToneText = '';
+  currentToneHTML = '';
+  currentInfoText = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function resetSongSearch() {
   document.getElementById('songConfirmArea').style.display = 'none';
   document.getElementById('toneBtn').style.display = '';
   document.getElementById('responseArea').className = 'response-area';
+  document.getElementById('newSearchRow').style.display = 'none';
   confirmedSongTitle = '';
   confirmedSongArtist = '';
 }
@@ -938,10 +1034,10 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
     const isFaved = isFavorited(song, style);
     const songHeader = confirmedSongTitle ? `
       <div style="padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--border);">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Now Playing</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Now Playing</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--text);line-height:1.1;">${confirmedSongTitle}</div>
         ${confirmedSongArtist ? `<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">${confirmedSongArtist}</div>` : ''}
-        ${style ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${style}</div>` : ''}
+        ${style ? `<div style="font-size:12px;color:var(--text-dim);margin-top:3px;">${style}</div>` : ''}
       </div>` : '';
     area.className = 'response-area visible';
     area.innerHTML = `
@@ -955,9 +1051,11 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
       <div class="response-content" id="toneContent">${currentToneHTML}</div>
       <div class="info-panel" id="infoPanel">
         <div class="info-panel-label">Why These Settings</div>
-        <div class="info-panel-text" id="infoPanelText"><div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:13px;"><div class="spinner"></div> Loading explanation...</div></div>
+        <div class="info-panel-text" id="infoPanelText"><div style="display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:13px;"><div class="spinner"></div> Loading explanation...</div></div>
       </div>
     `;
+    document.getElementById('songConfirmArea').style.display = 'none';
+    document.getElementById('newSearchRow').style.display = 'block';
   } catch(err) {
     area.className = 'response-area visible';
     area.innerHTML = `<div style="color:var(--red);font-size:14px">Error: ${err.message}</div>`;
@@ -1039,6 +1137,10 @@ function toggleFavorite() {
   }
 }
 
+function stripMarkdown(text) {
+  return text.replace(/###?\s*/g, '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/\n+/g, ' ').trim();
+}
+
 function renderFavorites() {
   const list = document.getElementById('favList');
   if (!favorites.length) {
@@ -1054,7 +1156,7 @@ function renderFavorites() {
         </div>
         <div class="fav-date">${f.date}</div>
       </div>
-      <div class="fav-preview">${f.toneText.substring(0, 120)}...</div>
+      <div class="fav-preview">${stripMarkdown(f.toneText).substring(0, 120)}...</div>
     </div>
   `).join('');
 }
@@ -1078,8 +1180,12 @@ function reloadFavSong() {
   const f = favorites[currentFavIndex];
   document.getElementById('songInput').value = f.song;
   document.getElementById('styleInput').value = f.style || '';
+  confirmedSongTitle = '';
+  confirmedSongArtist = '';
+  document.getElementById('songConfirmArea').style.display = 'none';
+  document.getElementById('toneBtn').style.display = '';
+  document.getElementById('responseArea').className = 'response-area';
   closeModal('favModal');
-  // Switch to tone tab
   document.querySelectorAll('.nav-tab')[0].click();
 }
 
@@ -1231,6 +1337,9 @@ function init() {
   renderGear();
   renderGuitarSelector();
   updateUsageBadge();
+  // Show no-key banner if needed
+  const banner = document.getElementById('noKeyBanner');
+  if (banner) banner.style.display = apiKey ? 'none' : 'block';
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
   });
