@@ -1871,7 +1871,7 @@ function init() {
   renderGear();
   renderGuitarSelector();
   updateUsageBadge();
-  // Show no-key banner if needed
+  showToneState('search');
   const banner = document.getElementById('noKeyBanner');
   if (banner) banner.style.display = apiKey ? 'none' : 'block';
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
