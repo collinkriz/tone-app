@@ -1815,51 +1815,50 @@ Keep answers concise and practical — this is a mobile chat UI. Plain text only
 }
 
 // ===== EXPORT =====
-function exportApp() {
+async function exportApp() {
+  const btn = document.querySelector('[onclick="exportApp()"]');
+  if (btn) { btn.innerHTML = '⏳ Exporting...'; btn.disabled = true; }
+
   const currentGear = JSON.parse(localStorage.getItem('tc_gear') || 'null') || gear;
   const currentFavorites = JSON.parse(localStorage.getItem('tc_favorites') || '[]');
   const currentUsage = JSON.parse(localStorage.getItem('tc_usage') || '{"calls":[],"totalIn":0,"totalOut":0}');
-
-  let html = document.documentElement.outerHTML;
-
-  // Remove any existing snapshot loader
-  html = html.replace(/<script id="tc-snapshot-loader">[\s\S]*?<\/script>/g, '');
-  // Remove any baked snapshot block
-  html = html.replace(/\/\/ ===== BAKED SNAPSHOT =====[\s\S]*?\/\/ ===== END SNAPSHOT =====\n?/g, '');
 
   const snapshotData = JSON.stringify({
     tc_gear: JSON.stringify(currentGear),
     tc_favorites: JSON.stringify(currentFavorites),
     tc_usage: JSON.stringify(currentUsage)
-    // API key intentionally excluded — re-enter after upload for security
   });
 
   const loaderScript = `<script id="tc-snapshot-loader">
-(function() {
-  var d = ${snapshotData};
-  // Always overwrite — this is a fresh export
-  for (var k in d) { if (d[k]) localStorage.setItem(k, d[k]); }
-  var s = document.getElementById('tc-snapshot-loader');
-  if (s) s.remove();
-})();
+(function(){var d=${snapshotData};for(var k in d){if(d[k])localStorage.setItem(k,d[k]);}var s=document.getElementById('tc-snapshot-loader');if(s)s.remove();})();
 <\/script>`;
 
-  // Inject right after <html lang="en"><head>
-  html = html.replace(/(<html[^>]*><head>)/, '$1' + loaderScript);
+  try {
+    // Fetch clean source from GitHub
+    const res = await fetch('https://collinkriz.github.io/tone-app/tone-caddy.html?nocache=' + Date.now());
+    if (!res.ok) throw new Error('Could not fetch source: ' + res.status);
+    let html = await res.text();
 
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'tone-caddy-' + new Date().toISOString().slice(0,10) + '.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+    // Remove any existing snapshot loader in the fetched source
+    html = html.replace(/<script id="tc-snapshot-loader">[\s\S]*?<\/script>/g, '');
 
-  // Flash confirmation
-  const btn = document.querySelector('[onclick="exportApp()"]');
-  if (btn) { const orig = btn.innerHTML; btn.innerHTML = '✓ Exported!'; setTimeout(() => btn.innerHTML = orig, 2000); }
+    // Inject snapshot loader right after <head>
+    html = html.replace('<head>', '<head>' + loaderScript);
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tone-caddy-' + new Date().toISOString().slice(0,10) + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if (btn) { btn.innerHTML = '✓ Exported!'; btn.disabled = false; setTimeout(() => btn.innerHTML = '↓ Export App with My Data', 2000); }
+  } catch(e) {
+    if (btn) { btn.innerHTML = '⚠ Failed: ' + e.message; btn.disabled = false; setTimeout(() => btn.innerHTML = '↓ Export App with My Data', 3000); }
+  }
 }
 
 // ===== INIT =====
