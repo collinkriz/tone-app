@@ -150,7 +150,9 @@
   .modal-overlay.open { display: flex; }
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; padding: 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
   @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; cursor: pointer; }
+  .modal-handle-zone { width: 100%; padding: 8px 0 4px; margin: -8px 0 12px; display: flex; justify-content: center; cursor: pointer; touch-action: none; }
+  .modal-handle-zone .modal-handle { margin: 0; }
   .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; color: var(--amber); }
 
   .form-group { margin-bottom: 16px; }
@@ -1874,6 +1876,19 @@ function init() {
   if (banner) banner.style.display = apiKey ? 'none' : 'block';
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+  });
+
+  // Swipe down to close any modal
+  document.querySelectorAll('.modal').forEach(modal => {
+    let startY = 0;
+    modal.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+    modal.addEventListener('touchend', e => {
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy > 60) {
+        const overlay = modal.closest('.modal-overlay');
+        if (overlay) closeModal(overlay.id);
+      }
+    }, { passive: true });
   });
   document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') identifySong(); });
   document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
