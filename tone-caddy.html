@@ -158,6 +158,43 @@
   .safe-bottom { height: env(safe-area-inset-bottom, 16px); }
   .empty-state { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; }
   .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* CHATBOT FAB */
+  .chat-fab { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 20px rgba(232,168,37,0.4); z-index: 150; transition: transform 0.2s; }
+  .chat-fab:active { transform: scale(0.92); }
+  .chat-fab.open { background: var(--surface2); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
+  /* CHAT PANEL */
+  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 75vh; background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; z-index: 140; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+  .chat-panel.open { transform: translateY(0); }
+  .chat-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .chat-panel-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); }
+  .chat-panel-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .chat-clear { background: none; border: none; color: var(--text-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; padding: 4px 8px; }
+
+  /* CHAT MESSAGES */
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-messages::-webkit-scrollbar { display: none; }
+  .chat-msg { max-width: 85%; display: flex; flex-direction: column; gap: 4px; animation: fadeIn 0.2s ease; }
+  .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+  .chat-msg.assistant { align-self: flex-start; align-items: flex-start; }
+  .chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.6; }
+  .chat-msg.user .chat-bubble { background: var(--amber); color: #0f0e0c; border-bottom-right-radius: 4px; }
+  .chat-msg.assistant .chat-bubble { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .chat-typing { display: flex; gap: 4px; align-items: center; padding: 12px 14px; }
+  .chat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: chatBounce 1.2s infinite; }
+  .chat-dot:nth-child(2) { animation-delay: 0.2s; }
+  .chat-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes chatBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  /* CHAT INPUT */
+  .chat-input-row { display: flex; gap: 10px; padding: 12px 16px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border); flex-shrink: 0; background: var(--surface); }
+  .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; color: var(--text); font-family: 'Barlow', sans-serif; font-size: 15px; padding: 10px 16px; outline: none; -webkit-appearance: none; }
+  .chat-input:focus { border-color: var(--amber); }
+  .chat-input::placeholder { color: var(--text-muted); }
+  .chat-send { width: 40px; height: 40px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: transform 0.15s; }
+  .chat-send:active { transform: scale(0.9); }
+  .chat-send:disabled { background: var(--surface2); }
 </style>
 </head>
 <body>
@@ -377,6 +414,29 @@
       <button class="btn-secondary" onclick="closeModal('apiModal')">Cancel</button>
       <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
     </div>
+  </div>
+</div>
+
+<!-- CHATBOT FAB -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()">🎸</button>
+
+<!-- CHAT PANEL -->
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-panel-header">
+    <div>
+      <div class="chat-panel-title">Ask Tone Caddy</div>
+      <div class="chat-panel-sub">Your gear-aware guitar advisor</div>
+    </div>
+    <button class="chat-clear" onclick="clearChat()">Clear</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg assistant">
+      <div class="chat-bubble">Hey! Ask me anything about your gear, tone, technique, or how to nail a specific sound. I know your full rig. 🎸</div>
+    </div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" type="text" placeholder="Ask anything..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="chat-send" id="chatSend" onclick="sendChat()">↑</button>
   </div>
 </div>
 
