@@ -53,11 +53,6 @@
   .gear-info { flex: 1; min-width: 0; }
   .gear-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: #f0e8d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gear-sub { font-size: 13px; color: #c8b89a; margin-top: 3px; }
-  .gear-type-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 7px; border-radius: 3px; flex-shrink: 0; }
-  .badge-guitar { background: rgba(90,158,111,0.15); color: var(--green); border: 1px solid rgba(90,158,111,0.3); }
-  .badge-amp { background: rgba(232,168,37,0.1); color: var(--amber-dim); border: 1px solid rgba(232,168,37,0.25); }
-  .badge-pedal { background: rgba(217,79,61,0.1); color: var(--red); border: 1px solid rgba(217,79,61,0.25); }
-
   .add-btn { width: 100%; background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
   .add-btn:active { border-color: var(--amber); color: var(--amber); }
 
@@ -75,7 +70,6 @@
   /* RESPONSE AREA */
   .response-area { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px; min-height: 60px; display: none; }
   .response-area.visible { display: block; }
-  .response-area.loading { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-muted); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; }
   .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -110,11 +104,9 @@
   .fav-card:active { border-color: var(--amber-dim); }
   .fav-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
   .fav-song-name { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 900; letter-spacing: 0.5px; color: var(--text); flex: 1; }
-  .fav-song-style { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .fav-date { font-size: 11px; color: var(--text-muted); flex-shrink: 0; margin-left: 10px; margin-top: 2px; }
+  .fav-song-style { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .fav-date { font-size: 11px; color: var(--text-dim); flex-shrink: 0; margin-left: 10px; margin-top: 2px; }
   .fav-preview { font-size: 13px; color: var(--text-dim); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .fav-heart-remove { background: none; border: none; color: var(--heart); font-size: 18px; cursor: pointer; padding: 4px; flex-shrink: 0; }
-
   /* SIGNAL CHAIN PAGE */
   .signal-chain { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 16px 0 12px; scrollbar-width: none; margin-bottom: 24px; }
   .signal-chain::-webkit-scrollbar { display: none; }
@@ -228,49 +220,64 @@
 
 <!-- TONE PAGE -->
 <div class="page active" id="page-tone">
-  <div style="height:20px"></div>
 
-  <!-- No API key banner -->
-  <div id="noKeyBanner" style="display:none; background:rgba(232,168,37,0.08); border:1px solid var(--amber-dim); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-size:14px; color:var(--text-dim); line-height:1.6;">
-    🔑 <strong style="color:var(--amber)">API key not set.</strong> Tap <strong style="color:var(--amber)">API Key</strong> in the header to add your Anthropic key before searching.
+  <!-- DEFAULT STATE: clean search UI -->
+  <div id="toneSearchState" style="padding-top:24px;">
+
+    <!-- No API key banner -->
+    <div id="noKeyBanner" style="display:none; background:rgba(232,168,37,0.08); border:1px solid var(--amber-dim); border-radius:8px; padding:12px 16px; margin-bottom:20px; font-size:13px; color:var(--text-dim); line-height:1.6;">
+      🔑 <strong style="color:var(--amber)">Set your API key</strong> in the header before searching.
+    </div>
+
+    <!-- Guitar selector — compact chips -->
+    <div style="margin-bottom:24px;">
+      <div class="section-label">Guitar</div>
+      <div id="guitarSelector" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Song search — big and prominent -->
+    <div class="song-input-wrap" style="margin-bottom:12px;">
+      <span class="song-input-icon">🎵</span>
+      <input class="song-input" id="songInput" type="text" placeholder="Song or artist..." autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+
+    <!-- Style hint — collapsed toggle -->
+    <div style="margin-bottom:20px;">
+      <button id="styleToggleBtn" onclick="toggleStyleHint()" style="background:none;border:none;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;padding:0;">＋ Add style hint</button>
+      <div id="styleHintRow" style="display:none;margin-top:10px;">
+        <input class="form-input" id="styleInput" type="text" placeholder="e.g. intro clean tone, chorus crunch..." autocomplete="off">
+      </div>
+    </div>
+
+    <button class="get-tone-btn" id="toneBtn" onclick="identifySong()">Find Song →</button>
   </div>
 
-  <!-- STEP 1: Guitar selector -->
-  <div class="section-label">Step 1 · Guitar</div>
-  <div id="guitarSelector" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;"></div>
-
-  <!-- STEP 2: Song input -->
-  <div class="section-label">Step 2 · Song or Artist</div>
-  <div class="song-input-wrap">
-    <span class="song-input-icon">🎵</span>
-    <input class="song-input" id="songInput" type="text" placeholder="e.g. Champagne Supernova, Oasis" autocomplete="off" autocorrect="off" spellcheck="false">
-  </div>
-  <div class="form-group" style="margin-bottom:16px">
-    <div class="form-label">Style hint (optional)</div>
-    <input class="form-input" id="styleInput" type="text" placeholder="e.g. intro clean tone, solo crunch..." autocomplete="off">
-  </div>
-  <button class="get-tone-btn" id="toneBtn" onclick="identifySong()">Find Song →</button>
-
-  <!-- Song confirm card (shown after identification) -->
-  <div id="songConfirmArea" style="display:none; margin-bottom:20px;">
-    <div class="section-label">Step 3 · Confirm Song</div>
-    <div id="songConfirmCard" style="background:var(--surface); border:1px solid var(--amber-dim); border-radius:10px; padding:16px; margin-bottom:12px;">
-      <div style="font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--amber-dim); margin-bottom:8px;">Identified</div>
-      <div id="songConfirmTitle" style="font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:900; color:var(--text); margin-bottom:2px;"></div>
-      <div id="songConfirmArtist" style="font-size:14px; color:var(--text-dim); margin-bottom:8px;"></div>
-      <div id="songConfirmMeta" style="font-size:13px; color:var(--text-dim); line-height:1.6;"></div>
+  <!-- CONFIRM STATE: shown after song identified -->
+  <div id="songConfirmArea" style="display:none;">
+    <div id="songConfirmCard" style="background:var(--surface2); border:1px solid var(--amber-dim); border-radius:12px; padding:20px; margin-bottom:16px;">
+      <div style="font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--amber-dim); margin-bottom:10px;">Identified</div>
+      <div id="songConfirmTitle" style="font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:900; color:var(--text); line-height:1.1; margin-bottom:4px;"></div>
+      <div id="songConfirmArtist" style="font-size:14px; color:var(--text-dim); margin-bottom:10px;"></div>
+      <div id="songConfirmMeta" style="font-size:13px; color:var(--text-dim); line-height:1.65; padding-top:10px; border-top:1px solid var(--border);"></div>
     </div>
     <div style="display:flex; gap:10px;">
-      <button class="btn-secondary" style="flex:1" onclick="resetSongSearch()">← Try Again</button>
-      <button class="btn-primary" style="flex:2" onclick="getTone()">Get Tone Settings →</button>
+      <button class="btn-secondary" style="flex:1" onclick="resetSongSearch()">← Back</button>
+      <button class="btn-primary" style="flex:2" onclick="getTone()">Get Tone →</button>
     </div>
   </div>
 
-  <div class="response-area" id="responseArea"></div>
-  <!-- New Search button shown after results -->
-  <div id="newSearchRow" style="display:none; margin-top:16px;">
-    <button onclick="startNewSearch()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer;">← New Search</button>
+  <!-- RESULTS STATE -->
+  <div id="toneResultsState" style="display:none;">
+    <div class="response-area visible" id="responseArea"></div>
+    <button onclick="startNewSearch()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer;margin-top:14px;">← New Search</button>
   </div>
+
+  <!-- LOADING STATE -->
+  <div id="toneLoadingState" style="display:none; text-align:center; padding:48px 20px;">
+    <div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 16px;"></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);">Getting your tone...</div>
+  </div>
+
   <div class="safe-bottom"></div>
 </div>
 
@@ -300,10 +307,15 @@
 <!-- CHAIN PAGE -->
 <div class="page" id="page-chain">
   <div style="height:20px"></div>
+  <div class="section-label">Guitar</div>
+  <div id="rigGuitarSelector" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;"></div>
   <div class="section-label">Signal Path</div>
   <div class="signal-chain" id="signalChain"></div>
-  <div class="section-label">Active Rig</div>
-  <div id="activeRigInfo" style="color:var(--text-dim); font-size:14px; line-height:1.8; margin-bottom:20px;"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div class="section-label" style="margin-bottom:0;flex:1;">Active Rig</div>
+    <button onclick="openRigEditor()" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 12px;cursor:pointer;flex-shrink:0;margin-left:12px;">Edit Rig</button>
+  </div>
+  <div id="activeRigInfo" style="margin-bottom:20px;"></div>
   <div class="safe-bottom"></div>
 </div>
 
@@ -420,6 +432,19 @@
   </div>
 </div>
 
+<!-- RIG EDITOR MODAL -->
+<div class="modal-overlay" id="rigEditorModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="rigEditorTitle">Edit Rig</div>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Toggle which pedals are active for this guitar. Tap a pedal to include or exclude it from the signal chain.</p>
+    <div id="rigEditorPedals" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveRigProfile()">Save Rig</button>
+    </div>
+  </div>
+</div>
+
 <!-- RIG DETAIL MODAL -->
 <div class="modal-overlay" id="rigDetailModal">
   <div class="modal">
@@ -485,8 +510,18 @@
 // ===== STATE =====
 const DEFAULT_GEAR = {
   guitars: [
-    { name: "Epiphone Wildkat", notes: "Semi-hollow body, P90 pickups (bridge + neck). Warm, gritty tone with excellent feedback characteristics. Primary electric.", controls: ["Volume", "Tone", "Pickup Selector"] },
-    { name: "Takamine GD71CE-BSB", notes: "Acoustic-electric, BSB sunburst. Runs direct to PA via Boss AD-2 preamp/DI. Used for acoustic songs.", controls: ["Volume", "Bass", "Mid", "Treble"] }
+    {
+      name: "Epiphone Wildkat",
+      notes: "Semi-hollow body, P90 pickups (bridge + neck). Warm, gritty tone with excellent feedback characteristics. Primary electric.",
+      controls: ["Volume", "Tone", "Pickup Selector"],
+      rigProfile: ["Boss BD-2 Blues Driver", "Boss DS-1 Distortion", "Ibanez Mini Tube Screamer TS Mini", "Boss DD-3T Digital Delay"]
+    },
+    {
+      name: "Takamine GD71CE-BSB",
+      notes: "Acoustic-electric, BSB sunburst. Runs direct to PA via Boss AD-2 preamp/DI. Used for acoustic songs.",
+      controls: ["Volume", "Bass", "Mid", "Treble"],
+      rigProfile: ["Boss AD-2 Acoustic Preamp"]
+    }
   ],
   amps: [
     { name: "Peavey Bandit 112", notes: "Solid state 80W 1x12 combo. Always use the Clean channel — the Lead channel is not used. Overdrive and distortion come entirely from pedals. Clean channel has no Pre Gain.", controls: ["Volume", "Bass", "Mid", "Treble", "Resonance", "Presence"] }
@@ -494,6 +529,7 @@ const DEFAULT_GEAR = {
   pedals: [
     { name: "Boss BD-2 Blues Driver", notes: "Always-on for base electric tone. Light hair/grind, keeps amp clean channel lively.", controls: ["Level", "Tone", "Gain"] },
     { name: "Boss DS-1 Distortion", notes: "Heavier songs (Ramones, White Stripes, Pixies). Stacks after BD-2 for aggressive crunch.", controls: ["Level", "Tone", "Dist"] },
+    { name: "Ibanez Mini Tube Screamer TS Mini", notes: "Compact version of the classic TS808/TS9. Mid-hump overdrive, adds warmth and sustain. Great stacked with BD-2 for solo boost.", controls: ["Drive", "Tone", "Level"] },
     { name: "Boss DD-3T Digital Delay", notes: "End of chain for slap or longer repeats. Space/ambience on specific songs.", controls: ["E.Level", "F.Back", "D.Time", "Mode"] },
     { name: "Boss AD-2 Acoustic Preamp", notes: "Used with Takamine acoustic to PA. Not in main electric chain.", controls: ["Volume", "Bass", "Mid", "Treble", "Reverb", "Chorus"] }
   ]
@@ -520,6 +556,8 @@ function saveFavorites() { localStorage.setItem('tc_favorites', JSON.stringify(f
 // ===== DATA MIGRATION =====
 function migrateGearData() {
   let changed = false;
+
+  // Fix Bandit controls
   gear.amps = gear.amps.map(a => {
     if (a.name === 'Peavey Bandit 112') {
       changed = true;
@@ -527,6 +565,33 @@ function migrateGearData() {
     }
     return a;
   });
+
+  // Add Mini TS if missing
+  const hasTS = gear.pedals.some(p => /tube screamer|ts mini/i.test(p.name));
+  if (!hasTS) {
+    // Insert after DS-1 if present, else at end
+    const ds1idx = gear.pedals.findIndex(p => /DS-1/i.test(p.name));
+    const tsEntry = { name: "Ibanez Mini Tube Screamer TS Mini", notes: "Compact version of the classic TS808/TS9. Mid-hump overdrive, adds warmth and sustain. Great stacked with BD-2 for solo boost.", controls: ["Drive", "Tone", "Level"] };
+    if (ds1idx >= 0) gear.pedals.splice(ds1idx + 1, 0, tsEntry);
+    else gear.pedals.push(tsEntry);
+    changed = true;
+  }
+
+  // Add rigProfiles to guitars that don't have them
+  gear.guitars = gear.guitars.map(g => {
+    if (!g.rigProfile) {
+      changed = true;
+      if (/takamine|acoustic/i.test(g.name)) {
+        return { ...g, rigProfile: ["Boss AD-2 Acoustic Preamp"] };
+      } else {
+        // Default electric rig — all non-acoustic pedals
+        const electricPedals = gear.pedals.filter(p => !/(acoustic|PA|direct|DI)/i.test(p.notes)).map(p => p.name);
+        return { ...g, rigProfile: electricPedals };
+      }
+    }
+    return g;
+  });
+
   if (changed) saveGearData();
 }
 
@@ -785,6 +850,11 @@ function saveGear() {
     controls: overrideControls.length ? overrideControls : (pendingGearData?.controls || [])
   };
 
+  // Preserve rigProfile if editing a guitar
+  if (!isNew && PLURAL[type] === 'guitars' && gear.guitars[index]?.rigProfile) {
+    item.rigProfile = gear.guitars[index].rigProfile;
+  }
+
   if (!item.name) { alert('Please enter a name'); return; }
 
   if (isNew) {
@@ -802,60 +872,127 @@ function deleteGear() {
   const type = document.getElementById('gearType').value;
   const index = parseInt(document.getElementById('gearEditIndex').value);
   if (confirm('Delete this gear?')) {
+    const name = gear[PLURAL[type]][index].name;
     gear[PLURAL[type]].splice(index, 1);
+    // Remove from all guitar rig profiles
+    if (type === 'pedal') {
+      gear.guitars = gear.guitars.map(g => ({
+        ...g,
+        rigProfile: (g.rigProfile || []).filter(p => p !== name)
+      }));
+    }
     saveGearData();
     closeModal('addGearModal');
     renderGear();
+    renderGuitarSelector();
   }
 }
 
 // ===== CHAIN =====
+let rigEditorGuitarIndex = 0;
+let rigEditorPending = [];
+
 function renderChain() {
+  // Guitar selector on Rig tab
+  const sel = document.getElementById('rigGuitarSelector');
+  if (sel) {
+    sel.innerHTML = gear.guitars.map((g, i) =>
+      `<button class="guitar-pill ${i === selectedGuitarIndex ? 'selected' : ''}" onclick="selectGuitarRig(${i})">${g.name}</button>`
+    ).join('');
+  }
+
+  const { guitar, amps, pedals } = getActiveRig();
   const chain = document.getElementById('signalChain');
   const info = document.getElementById('activeRigInfo');
-  const nodes = [];
 
-  // Guitars
-  gear.guitars.forEach(g => nodes.push({ icon: '🎸', label: g.name.replace('Epiphone ','').replace('Takamine ','').split(' ')[0] }));
-  // Pedals (exclude acoustic/PA-only by checking notes)
-  gear.pedals.filter(p => !/(acoustic|PA|direct|DI)/i.test(p.notes)).forEach(p => {
-    const shortName = p.name.replace(/Boss |Ibanez |MXR |Electro-Harmonix |EHX /i, '').split(' ').slice(0,2).join(' ');
+  // Build signal chain nodes
+  const nodes = [];
+  if (guitar) nodes.push({ icon: '🎸', label: guitar.name.replace(/Epiphone |Takamine |Fender |Gibson /i, '').split(' ')[0] });
+  pedals.forEach(p => {
+    const shortName = p.name.replace(/Boss |Ibanez |MXR |EHX |Electro-Harmonix /i, '').split(' ').slice(0,2).join(' ');
     nodes.push({ icon: '🎛️', label: shortName });
   });
-  // Amps
-  gear.amps.forEach(a => nodes.push({ icon: '🔊', label: a.name.split(' ').slice(0,2).join(' ') }));
+  amps.forEach(a => nodes.push({ icon: '🔊', label: a.name.split(' ').slice(0,2).join(' ') }));
 
-  chain.innerHTML = nodes.map((n,i) =>
+  chain.innerHTML = nodes.length ? nodes.map((n,i) =>
     `<div class="chain-node">
       <div class="chain-node-icon">${n.icon}</div>
       <div class="chain-node-label">${n.label}</div>
-    </div>` +
-    (i < nodes.length-1 ? '<div class="chain-arrow">→</div>' : '')
-  ).join('');
+    </div>` + (i < nodes.length-1 ? '<div class="chain-arrow">→</div>' : '')
+  ).join('') : '<div style="color:var(--text-dim);font-size:13px;padding:12px 0;">No active rig for this guitar.</div>';
 
-  // Tappable rig cards
+  // Active rig cards — guitar first, then amps, then active pedals
   const allGear = [
-    ...gear.guitars.map((g,i) => ({ icon:'🎸', item:g, type:'guitar', idx:i })),
-    ...gear.amps.map((g,i) => ({ icon:'🔊', item:g, type:'amp', idx:i })),
-    ...gear.pedals.map((g,i) => ({
-      icon:'🎛️',
-      item:g,
-      type:'pedal',
-      idx:i,
-      tag: /(acoustic|PA|direct|DI)/i.test(g.notes) ? '(Acoustic/PA)' : null
-    }))
+    ...(guitar ? [{ icon:'🎸', item:guitar, type:'guitar', idx:selectedGuitarIndex }] : []),
+    ...amps.map((a,i) => ({ icon:'🔊', item:a, type:'amp', idx:i })),
+    ...pedals.map((p) => {
+      const idx = gear.pedals.findIndex(x => x.name === p.name);
+      return { icon:'🎛️', item:p, type:'pedal', idx };
+    })
   ];
 
-  info.innerHTML = allGear.map(({icon, item, type, idx, tag}) => `
+  info.innerHTML = allGear.length ? allGear.map(({icon, item, type, idx}) => `
     <div class="rig-card" onclick="openRigDetail('${type}',${idx})">
       <div class="rig-card-icon">${icon}</div>
       <div class="rig-card-info">
-        <div class="rig-card-name">${item.name}${tag ? ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">'+tag+'</span>' : ''}</div>
-        <div class="rig-card-preview">${(item.notes||'No description').substring(0,60)}...</div>
+        <div class="rig-card-name">${item.name}</div>
+        <div class="rig-card-preview">${(item.notes||'').substring(0,60)}...</div>
       </div>
       <div class="rig-card-chevron">›</div>
     </div>
-  `).join('');
+  `).join('') : '<div style="color:var(--text-dim);font-size:13px;">No gear in this rig. Tap Edit Rig to add pedals.</div>';
+}
+
+function selectGuitarRig(i) {
+  selectedGuitarIndex = i;
+  renderChain();
+  renderGuitarSelector(); // keep tone tab in sync
+}
+
+function openRigEditor() {
+  const guitar = gear.guitars[selectedGuitarIndex];
+  if (!guitar) return;
+  rigEditorGuitarIndex = selectedGuitarIndex;
+  rigEditorPending = [...(guitar.rigProfile || [])];
+  document.getElementById('rigEditorTitle').textContent = guitar.name + ' · Rig';
+  renderRigEditorPedals();
+  document.getElementById('rigEditorModal').classList.add('open');
+}
+
+function renderRigEditorPedals() {
+  const el = document.getElementById('rigEditorPedals');
+  // Show all pedals sorted by chain logic so user sees natural order
+  const allSorted = sortPedalsByChainLogic(gear.pedals);
+  el.innerHTML = allSorted.map(p => {
+    const active = rigEditorPending.includes(p.name);
+    const chainPos = ['Tuner','Comp','Wah','Boost','OD','Dist','Fuzz','Mod','Pitch','Delay','Reverb','DI'][getPedalChainOrder(p)] || 'FX';
+    return `<div onclick="toggleRigPedal('${p.name.replace(/'/g,"\\'")}', this)"
+      style="display:flex;align-items:center;gap:12px;background:${active ? 'rgba(232,168,37,0.08)' : 'var(--surface2)'};border:1px solid ${active ? 'var(--amber-dim)' : 'var(--border)'};border-radius:8px;padding:12px 14px;cursor:pointer;transition:all 0.15s;">
+      <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${active ? 'var(--amber)' : 'var(--border)'};background:${active ? 'var(--amber)' : 'none'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#0f0e0c;font-weight:700;">${active ? '✓' : ''}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:${active ? '#f0e8d8' : 'var(--text-dim)'};">${p.name}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${p.controls?.join(' · ') || ''}</div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${active ? 'var(--amber-dim)' : 'var(--text-muted)'};flex-shrink:0;">${chainPos}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleRigPedal(name, el) {
+  const idx = rigEditorPending.indexOf(name);
+  if (idx >= 0) rigEditorPending.splice(idx, 1);
+  else rigEditorPending.push(name);
+  renderRigEditorPedals();
+}
+
+function saveRigProfile() {
+  // Sort the saved profile by chain logic order
+  const profilePedals = gear.pedals.filter(p => rigEditorPending.includes(p.name));
+  const sorted = sortPedalsByChainLogic(profilePedals);
+  gear.guitars[rigEditorGuitarIndex].rigProfile = sorted.map(p => p.name);
+  saveGearData();
+  closeModal('rigEditorModal');
+  renderChain();
 }
 
 function openRigDetail(type, idx) {
@@ -916,13 +1053,8 @@ async function identifySong() {
   if (!apiKey) { alert('Add your Anthropic API key first'); toggleApiModal(); return; }
 
   const btn = document.getElementById('toneBtn');
-  const confirmArea = document.getElementById('songConfirmArea');
-  const responseArea = document.getElementById('responseArea');
-
   btn.disabled = true;
   btn.textContent = 'Identifying...';
-  confirmArea.style.display = 'none';
-  responseArea.className = 'response-area';
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -946,45 +1078,54 @@ async function identifySong() {
     document.getElementById('songConfirmTitle').textContent = song.title;
     document.getElementById('songConfirmArtist').textContent = song.artist + (song.year ? '  ·  ' + song.year : '') + (song.genre ? '  ·  ' + song.genre : '');
     document.getElementById('songConfirmMeta').textContent = song.notes || '';
-    confirmArea.style.display = 'block';
-    btn.style.display = 'none';
-    confirmArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToneState('confirm');
   } catch(e) {
-    // fallback: just use the raw input
     confirmedSongTitle = query;
     confirmedSongArtist = '';
     document.getElementById('songConfirmTitle').textContent = query;
     document.getElementById('songConfirmArtist').textContent = 'Proceeding with your input';
     document.getElementById('songConfirmMeta').textContent = '';
-    confirmArea.style.display = 'block';
-    btn.style.display = 'none';
+    showToneState('confirm');
   }
   btn.disabled = false;
-  btn.textContent = 'Find Song';
+  btn.textContent = 'Find Song →';
+}
+
+function toggleStyleHint() {
+  const row = document.getElementById('styleHintRow');
+  const btn = document.getElementById('styleToggleBtn');
+  const open = row.style.display !== 'none';
+  row.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '＋ Add style hint' : '− Remove style hint';
+  if (!open) document.getElementById('styleInput').focus();
+}
+
+function showToneState(state) {
+  // states: 'search' | 'confirm' | 'loading' | 'results'
+  document.getElementById('toneSearchState').style.display   = state === 'search'  ? 'block' : 'none';
+  document.getElementById('songConfirmArea').style.display   = state === 'confirm' ? 'block' : 'none';
+  document.getElementById('toneLoadingState').style.display  = state === 'loading' ? 'block' : 'none';
+  document.getElementById('toneResultsState').style.display  = state === 'results' ? 'block' : 'none';
 }
 
 function startNewSearch() {
   document.getElementById('songInput').value = '';
   document.getElementById('styleInput').value = '';
-  document.getElementById('songConfirmArea').style.display = 'none';
-  document.getElementById('toneBtn').style.display = '';
-  document.getElementById('responseArea').className = 'response-area';
-  document.getElementById('newSearchRow').style.display = 'none';
+  document.getElementById('styleHintRow').style.display = 'none';
+  document.getElementById('styleToggleBtn').textContent = '＋ Add style hint';
   confirmedSongTitle = '';
   confirmedSongArtist = '';
   currentToneText = '';
   currentToneHTML = '';
   currentInfoText = '';
+  showToneState('search');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetSongSearch() {
-  document.getElementById('songConfirmArea').style.display = 'none';
-  document.getElementById('toneBtn').style.display = '';
-  document.getElementById('responseArea').className = 'response-area';
-  document.getElementById('newSearchRow').style.display = 'none';
   confirmedSongTitle = '';
   confirmedSongArtist = '';
+  showToneState('search');
 }
 
 // ===== TONE ENGINE =====
@@ -1001,13 +1142,10 @@ async function getTone() {
   currentToneHTML = '';
   currentInfoText = '';
 
-  const btn = document.getElementById('toneBtn');
-  const area = document.getElementById('responseArea');
-  btn.disabled = true;
-  btn.textContent = 'Analyzing...';
-  area.className = 'response-area visible loading';
-  area.innerHTML = '<div class="spinner"></div> Getting tone...';
+  showToneState('loading');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  const area = document.getElementById('responseArea');
   const gearContext = buildGearContext();
   const prompt = `You are an expert guitar tone advisor. The guitarist has this specific gear:
 
@@ -1039,7 +1177,6 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
         ${confirmedSongArtist ? `<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">${confirmedSongArtist}</div>` : ''}
         ${style ? `<div style="font-size:12px;color:var(--text-dim);margin-top:3px;">${style}</div>` : ''}
       </div>` : '';
-    area.className = 'response-area visible';
     area.innerHTML = `
       ${songHeader}
       <div class="response-actions">
@@ -1054,15 +1191,11 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
         <div class="info-panel-text" id="infoPanelText"><div style="display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:13px;"><div class="spinner"></div> Loading explanation...</div></div>
       </div>
     `;
-    document.getElementById('songConfirmArea').style.display = 'none';
-    document.getElementById('newSearchRow').style.display = 'block';
+    showToneState('results');
   } catch(err) {
-    area.className = 'response-area visible';
-    area.innerHTML = `<div style="color:var(--red);font-size:14px">Error: ${err.message}</div>`;
+    area.innerHTML = `<div style="color:var(--red);font-size:14px;padding:4px 0;">Error: ${err.message}</div>`;
+    showToneState('results');
   }
-  btn.disabled = false;
-  btn.textContent = 'Get Tone Settings';
-  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function toggleInfo() {
@@ -1182,9 +1315,7 @@ function reloadFavSong() {
   document.getElementById('styleInput').value = f.style || '';
   confirmedSongTitle = '';
   confirmedSongArtist = '';
-  document.getElementById('songConfirmArea').style.display = 'none';
-  document.getElementById('toneBtn').style.display = '';
-  document.getElementById('responseArea').className = 'response-area';
+  showToneState('search');
   closeModal('favModal');
   document.querySelectorAll('.nav-tab')[0].click();
 }
@@ -1199,12 +1330,52 @@ function deleteFav() {
 }
 
 // ===== HELPERS =====
+
+// Standard signal chain order categories
+function getPedalChainOrder(pedal) {
+  const name = pedal.name.toLowerCase();
+  const notes = (pedal.notes || '').toLowerCase();
+  const combined = name + ' ' + notes;
+
+  if (/tuner/.test(combined)) return 0;
+  if (/compressor|sustainer|comp/.test(combined)) return 1;
+  if (/wah|cry baby|envelope/.test(combined)) return 2;
+  if (/boost|clean boost/.test(combined)) return 3;
+  if (/overdrive|blues driver|tube screamer|ts\d|bd-?2|od-?/.test(combined)) return 4;
+  if (/distortion|ds-?1|rat|big muff|fuzz face/.test(combined)) return 5;
+  if (/fuzz/.test(combined)) return 6;
+  if (/chorus|flanger|phaser|tremolo|vibrato|rotary/.test(combined)) return 7;
+  if (/pitch|octave|harmonizer/.test(combined)) return 8;
+  if (/delay|echo|dd-?\d/.test(combined)) return 9;
+  if (/reverb/.test(combined)) return 10;
+  if (/acoustic|preamp|di|direct/.test(combined)) return 11;
+  return 5; // default: treat as distortion/drive
+}
+
+function sortPedalsByChainLogic(pedals) {
+  return [...pedals].sort((a, b) => getPedalChainOrder(a) - getPedalChainOrder(b));
+}
+
+function getActiveRig() {
+  const guitar = gear.guitars[selectedGuitarIndex];
+  if (!guitar) return { guitar: null, amps: gear.amps, pedals: [] };
+  const profile = guitar.rigProfile || [];
+  const activePedals = gear.pedals.filter(p => profile.includes(p.name));
+  const sortedPedals = sortPedalsByChainLogic(activePedals);
+  const isAcoustic = /(acoustic|takamine)/i.test(guitar.name) || /(acoustic|PA)/i.test(guitar.notes);
+  return {
+    guitar,
+    amps: isAcoustic ? [] : gear.amps,
+    pedals: sortedPedals
+  };
+}
+
 function buildGearContext() {
+  const { guitar, amps, pedals } = getActiveRig();
   let ctx = '';
-  const selectedGuitar = gear.guitars[selectedGuitarIndex];
-  if (selectedGuitar) ctx += 'GUITAR (selected):\n- ' + selectedGuitar.name + ': ' + selectedGuitar.notes + (selectedGuitar.controls?.length ? `. Controls: ${selectedGuitar.controls.join(', ')}` : '') + '\n\n';
-  if (gear.amps.length) ctx += 'AMPS:\n' + gear.amps.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n') + '\n\n';
-  if (gear.pedals.length) ctx += 'PEDALS (signal chain order):\n' + gear.pedals.map(g => `- ${g.name}: ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`).join('\n');
+  if (guitar) ctx += 'GUITAR:\n- ' + guitar.name + ': ' + guitar.notes + (guitar.controls?.length ? `. Controls: ${guitar.controls.join(', ')}` : '') + '\n\n';
+  if (amps.length) ctx += 'AMP:\n' + amps.map(a => `- ${a.name}: ${a.notes}${a.controls?.length ? `. Controls: ${a.controls.join(', ')}` : ''}`).join('\n') + '\n\n';
+  if (pedals.length) ctx += 'PEDALS (signal chain order):\n' + pedals.map(p => `- ${p.name}: ${p.notes}${p.controls?.length ? `. Controls: ${p.controls.join(', ')}` : ''}`).join('\n');
   return ctx;
 }
 
@@ -1286,20 +1457,29 @@ async function sendChat() {
 
   appendChatMsg('user', msg);
   chatHistory.push({ role: 'user', content: msg });
+  // Cap history to last 20 messages (10 exchanges) to control token cost
+  if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
   showTyping();
 
-  // Build full gear context for system prompt
-  const allGear = [
-    ...gear.guitars.map(g => `- ${g.name} (guitar): ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`),
-    ...gear.amps.map(g => `- ${g.name} (amp): ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`),
-    ...gear.pedals.map(g => `- ${g.name} (pedal): ${g.notes}${g.controls?.length ? `. Controls: ${g.controls.join(', ')}` : ''}`)
+  // Build gear context using active rig for selected guitar
+  const { guitar, amps, pedals } = getActiveRig();
+  const rigLines = [
+    ...(guitar ? [`- ${guitar.name} (guitar): ${guitar.notes}`] : []),
+    ...amps.map(a => `- ${a.name} (amp): ${a.notes}`),
+    ...pedals.map(p => `- ${p.name} (pedal): ${p.notes}${p.controls?.length ? `. Controls: ${p.controls.join(', ')}` : ''}`)
   ].join('\n');
+  // Also include all pedals for general questions
+  const allPedalLines = gear.pedals.map(p => `- ${p.name}: ${p.notes}`).join('\n');
 
-  const systemPrompt = `You are Tone Caddy, a friendly expert guitar tone advisor built into a personal rig app. You know this guitarist's exact gear:
+  const systemPrompt = `You are Tone Caddy, a friendly expert guitar tone advisor. The guitarist is currently set up with:
 
-${allGear}
+ACTIVE RIG (${guitar?.name || 'no guitar selected'}):
+${rigLines || 'No active rig'}
 
-Keep answers concise and practical — this is a mobile chat UI. Use plain text, no markdown headers. Be conversational and enthusiastic about gear. If asked about settings always reference the specific controls on their actual gear.`;
+ALL PEDALS OWNED:
+${allPedalLines}
+
+Keep answers concise and practical — this is a mobile chat UI. Plain text only, no markdown headers. Be conversational and specific to their actual gear.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
