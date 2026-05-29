@@ -592,6 +592,21 @@ function migrateGearData() {
     return g;
   });
 
+  // Re-sort all existing rigProfiles by chain logic
+  gear.guitars = gear.guitars.map(g => {
+    if (g.rigProfile?.length) {
+      const profilePedals = gear.pedals.filter(p =>
+        g.rigProfile.some(n => n.trim().toLowerCase() === p.name.trim().toLowerCase())
+      );
+      const sorted = sortPedalsByChainLogic(profilePedals).map(p => p.name);
+      if (JSON.stringify(sorted) !== JSON.stringify(g.rigProfile)) {
+        changed = true;
+        return { ...g, rigProfile: sorted };
+      }
+    }
+    return g;
+  });
+
   if (changed) saveGearData();
 }
 
@@ -964,7 +979,7 @@ function renderRigEditorPedals() {
   // Show all pedals sorted by chain logic so user sees natural order
   const allSorted = sortPedalsByChainLogic(gear.pedals);
   el.innerHTML = allSorted.map(p => {
-    const active = rigEditorPending.includes(p.name);
+    const active = rigEditorPending.some(n => n.trim().toLowerCase() === p.name.trim().toLowerCase());
     const chainPos = ['Tuner','Comp','Wah','Boost','OD','Dist','Fuzz','Mod','Pitch','Delay','Reverb','DI'][getPedalChainOrder(p)] || 'FX';
     return `<div onclick="toggleRigPedal('${p.name.replace(/'/g,"\\'")}', this)"
       style="display:flex;align-items:center;gap:12px;background:${active ? 'rgba(232,168,37,0.08)' : 'var(--surface2)'};border:1px solid ${active ? 'var(--amber-dim)' : 'var(--border)'};border-radius:8px;padding:12px 14px;cursor:pointer;transition:all 0.15s;">
@@ -978,8 +993,9 @@ function renderRigEditorPedals() {
   }).join('');
 }
 
-function toggleRigPedal(name, el) {
-  const idx = rigEditorPending.indexOf(name);
+function toggleRigPedal(name) {
+  const lower = name.trim().toLowerCase();
+  const idx = rigEditorPending.findIndex(n => n.trim().toLowerCase() === lower);
   if (idx >= 0) rigEditorPending.splice(idx, 1);
   else rigEditorPending.push(name);
   renderRigEditorPedals();
@@ -1360,13 +1376,18 @@ function getActiveRig() {
   const guitar = gear.guitars[selectedGuitarIndex];
   if (!guitar) return { guitar: null, amps: gear.amps, pedals: [] };
   const profile = guitar.rigProfile || [];
-  const activePedals = gear.pedals.filter(p => profile.includes(p.name));
-  const sortedPedals = sortPedalsByChainLogic(activePedals);
+  // Match by trimmed lowercase name to avoid mismatch issues
+  const pedalMap = {};
+  gear.pedals.forEach(p => { pedalMap[p.name.trim().toLowerCase()] = p; });
+  // Return pedals in rigProfile order (already sorted on save)
+  const activePedals = profile
+    .map(name => pedalMap[name.trim().toLowerCase()])
+    .filter(Boolean);
   const isAcoustic = /(acoustic|takamine)/i.test(guitar.name) || /(acoustic|PA)/i.test(guitar.notes);
   return {
     guitar,
     amps: isAcoustic ? [] : gear.amps,
-    pedals: sortedPedals
+    pedals: activePedals
   };
 }
 
