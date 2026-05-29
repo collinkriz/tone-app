@@ -549,6 +549,10 @@ let currentStyle = '';
 let currentToneHTML = '';
 let currentToneText = '';
 let currentInfoText = '';
+let currentAltToneText = '';
+let currentAltToneHTML = '';
+let currentAltInfoText = '';
+let currentToneView = 'primary';
 let currentFavIndex = -1;
 let selectedGuitarIndex = 0;
 let confirmedSongTitle = '';
@@ -1136,9 +1140,9 @@ function startNewSearch() {
   document.getElementById('styleToggleBtn').textContent = '＋ Add style hint';
   confirmedSongTitle = '';
   confirmedSongArtist = '';
-  currentToneText = '';
-  currentToneHTML = '';
-  currentInfoText = '';
+  currentToneText = ''; currentToneHTML = ''; currentInfoText = '';
+  currentAltToneText = ''; currentAltToneHTML = ''; currentAltInfoText = '';
+  currentToneView = 'primary';
   showToneState('search');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1162,34 +1166,58 @@ async function getTone() {
   currentToneText = '';
   currentToneHTML = '';
   currentInfoText = '';
+  currentAltToneText = '';
+  currentAltToneHTML = '';
+  currentAltInfoText = '';
+  currentToneView = 'primary';
 
   showToneState('loading');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   const area = document.getElementById('responseArea');
   const gearContext = buildGearContext();
+
   const prompt = `You are an expert guitar tone advisor. The guitarist has this specific gear:
 
 ${gearContext}
 
 They want to play: "${song}"${style ? ` (specifically: ${style})` : ''}
 
-Give them a concise, practical tone guide using ONLY their actual gear listed above. Format your response with clear sections using ### headers. For each piece of gear, ONLY suggest settings for controls that are explicitly listed — do not invent or add controls that aren't in the list. The Peavey Bandit 112 is always on Clean channel with NO Pre Gain and NO Post Gain — never suggest those. For each listed control, give specific positions (clock positions like "9 o'clock", or descriptive terms like "noon", "dimed", "off"). Be specific and actionable. If a piece of gear isn't needed for this song, say so briefly. End with a quick tip on technique if relevant.`;
+Generate TWO distinct tone approaches for this song using ONLY their actual gear. They should be meaningfully different — e.g. one cleaner and one grittier, or one using different pedal combinations, or one matching the recording vs one with a personal spin.
+
+Respond ONLY with valid JSON, no markdown, no backticks:
+{
+  "primary": {
+    "label": "Short name for this approach (e.g. 'Studio Tone', 'Gritty Live', 'Clean & Bright')",
+    "settings": "Full tone guide with ### section headers for each piece of gear. For each control give specific positions (clock positions or descriptive terms). ONLY use controls explicitly listed in the gear. Peavey Bandit 112 is always Clean channel, NO Pre Gain, NO Post Gain."
+  },
+  "alternate": {
+    "label": "Short name for alternate approach",
+    "settings": "Full alternate tone guide, same format."
+  }
+}`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1600, messages: [{ role: 'user', content: prompt }] })
     });
     const raw = await res.text();
     let data;
     try { data = JSON.parse(raw); } catch(e) { throw new Error('Bad JSON (status ' + res.status + '): ' + raw.substring(0, 300)); }
     if (!res.ok || data.type === 'error') throw new Error('API error (status ' + res.status + '): ' + JSON.stringify(data).substring(0, 300));
-    if (!data.content || !data.content[0] || !data.content[0].text) throw new Error('Unexpected shape (status ' + res.status + '): ' + raw.substring(0, 300));
+    if (!data.content || !data.content[0] || !data.content[0].text) throw new Error('Unexpected shape: ' + raw.substring(0, 300));
     if (data.usage) trackUsage('Tone: ' + (confirmedSongTitle || 'song'), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
-    currentToneText = data.content[0].text;
+
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim());
+    currentToneText = parsed.primary.settings;
     currentToneHTML = formatResponse(currentToneText);
+    currentAltToneText = parsed.alternate.settings;
+    currentAltToneHTML = formatResponse(currentAltToneText);
+    const primaryLabel = parsed.primary.label || 'Primary';
+    const altLabel = parsed.alternate.label || 'Alternate';
+
     const isFaved = isFavorited(song, style);
     const songHeader = confirmedSongTitle ? `
       <div style="padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--border);">
@@ -1198,20 +1226,40 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
         ${confirmedSongArtist ? `<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">${confirmedSongArtist}</div>` : ''}
         ${style ? `<div style="font-size:12px;color:var(--text-dim);margin-top:3px;">${style}</div>` : ''}
       </div>` : '';
+
     area.innerHTML = `
       ${songHeader}
+
+      <!-- Tone toggle -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="toneTogglePrimary" onclick="switchToneView('primary')"
+          style="flex:1;padding:10px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;background:var(--amber);border:none;color:#0f0e0c;">
+          ${primaryLabel}
+        </button>
+        <button id="toneToggleAlt" onclick="switchToneView('alt')"
+          style="flex:1;padding:10px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);">
+          ${altLabel}
+        </button>
+      </div>
+
       <div class="response-actions">
         <button class="action-pill ${isFaved ? 'hearted' : ''}" id="heartBtn" onclick="toggleFavorite()">
           ${isFaved ? '♥' : '♡'} ${isFaved ? 'Saved' : 'Save'}
         </button>
         <button class="action-pill" id="infoBtn" onclick="toggleInfo()">ℹ Why These Settings</button>
       </div>
+
       <div class="response-content" id="toneContent">${currentToneHTML}</div>
       <div class="info-panel" id="infoPanel">
         <div class="info-panel-label">Why These Settings</div>
         <div class="info-panel-text" id="infoPanelText"><div style="display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:13px;"><div class="spinner"></div> Loading explanation...</div></div>
       </div>
     `;
+
+    // Store labels for toggle
+    area.dataset.primaryLabel = primaryLabel;
+    area.dataset.altLabel = altLabel;
+
     showToneState('results');
   } catch(err) {
     area.innerHTML = `<div style="color:var(--red);font-size:14px;padding:4px 0;">Error: ${err.message}</div>`;
@@ -1219,31 +1267,51 @@ Give them a concise, practical tone guide using ONLY their actual gear listed ab
   }
 }
 
+function switchToneView(view) {
+  currentToneView = view;
+  const isPrimary = view === 'primary';
+  document.getElementById('toneContent').innerHTML = isPrimary ? currentToneHTML : currentAltToneHTML;
+
+  // Update toggle button styles
+  const primaryBtn = document.getElementById('toneTogglePrimary');
+  const altBtn = document.getElementById('toneToggleAlt');
+  if (primaryBtn && altBtn) {
+    primaryBtn.style.background = isPrimary ? 'var(--amber)' : 'var(--surface2)';
+    primaryBtn.style.border = isPrimary ? 'none' : '1px solid var(--border)';
+    primaryBtn.style.color = isPrimary ? '#0f0e0c' : 'var(--text-dim)';
+    altBtn.style.background = !isPrimary ? 'var(--amber)' : 'var(--surface2)';
+    altBtn.style.border = !isPrimary ? 'none' : '1px solid var(--border)';
+    altBtn.style.color = !isPrimary ? '#0f0e0c' : 'var(--text-dim)';
+  }
+
+  // Reset info panel when switching
+  const panel = document.getElementById('infoPanel');
+  const btn = document.getElementById('infoBtn');
+  if (panel) { panel.classList.remove('visible'); btn?.classList.remove('info-active'); }
+}
+
 async function toggleInfo() {
   const panel = document.getElementById('infoPanel');
   const btn = document.getElementById('infoBtn');
   const isOpen = panel.classList.contains('visible');
 
-  if (isOpen) {
-    panel.classList.remove('visible');
-    btn.classList.remove('info-active');
-    return;
-  }
+  if (isOpen) { panel.classList.remove('visible'); btn.classList.remove('info-active'); return; }
 
   panel.classList.add('visible');
   btn.classList.add('info-active');
 
-  // Already fetched
-  if (currentInfoText) {
-    document.getElementById('infoPanelText').innerHTML = currentInfoText;
+  const isPrimary = currentToneView === 'primary';
+  const cachedInfo = isPrimary ? currentInfoText : currentAltInfoText;
+
+  if (cachedInfo) {
+    document.getElementById('infoPanelText').textContent = cachedInfo;
     return;
   }
 
-  // Fetch explanation
-  const gearContext = buildGearContext();
+  const toneToExplain = isPrimary ? currentToneText : currentAltToneText;
   const prompt = `You are a guitar tone educator. Here is a tone recommendation that was given for "${currentSong}"${currentStyle ? ` (${currentStyle})` : ''}:
 
-${currentToneText}
+${toneToExplain}
 
 In 3-5 sentences, explain WHY these settings achieve this sound. Talk about the sonic characteristics of the song/artist, how each pedal/amp setting contributes, and any key tonal principles at play. Write conversationally, like you're talking to a fellow guitarist. No markdown, no headers.`;
 
@@ -1257,8 +1325,10 @@ In 3-5 sentences, explain WHY these settings achieve this sound. Talk about the 
     const data = JSON.parse(raw);
     if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
     if (data.usage) trackUsage('Why: ' + currentSong.substring(0,20), data.usage.input_tokens || 0, data.usage.output_tokens || 0);
-    currentInfoText = data.content[0].text;
-    document.getElementById('infoPanelText').textContent = currentInfoText;
+    const explanation = data.content[0].text;
+    if (isPrimary) currentInfoText = explanation;
+    else currentAltInfoText = explanation;
+    document.getElementById('infoPanelText').textContent = explanation;
   } catch(e) {
     document.getElementById('infoPanelText').textContent = 'Could not load explanation: ' + e.message;
   }
@@ -1277,12 +1347,18 @@ function toggleFavorite() {
     document.getElementById('heartBtn').className = 'action-pill';
     document.getElementById('heartBtn').innerHTML = '♡ Save';
   } else {
+    const area = document.getElementById('responseArea');
     favorites.unshift({
       song: currentSong,
       style: currentStyle || '',
       toneText: currentToneText,
       toneHTML: currentToneHTML,
       infoText: currentInfoText,
+      altToneText: currentAltToneText,
+      altToneHTML: currentAltToneHTML,
+      altInfoText: currentAltInfoText,
+      primaryLabel: area.dataset.primaryLabel || 'Primary',
+      altLabel: area.dataset.altLabel || 'Alternate',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     });
     saveFavorites();
@@ -1320,7 +1396,27 @@ function openFav(i) {
   const f = favorites[i];
   document.getElementById('favModalTitle').textContent = f.song;
   document.getElementById('favModalStyle').textContent = f.style || '';
-  document.getElementById('favModalContent').innerHTML = '<div class="response-content">' + f.toneHTML + '</div>';
+
+  const hasAlt = !!f.altToneHTML;
+  const primaryLabel = f.primaryLabel || 'Primary';
+  const altLabel = f.altLabel || 'Alternate';
+
+  // Build toggle if alternate exists
+  const toggleHTML = hasAlt ? `
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="favTogglePrimary" onclick="switchFavView('primary',${i})"
+        style="flex:1;padding:9px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:var(--amber);border:none;color:#0f0e0c;">
+        ${primaryLabel}
+      </button>
+      <button id="favToggleAlt" onclick="switchFavView('alt',${i})"
+        style="flex:1;padding:9px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);">
+        ${altLabel}
+      </button>
+    </div>` : '';
+
+  document.getElementById('favModalContent').innerHTML =
+    toggleHTML + '<div id="favToneBody" class="response-content">' + f.toneHTML + '</div>';
+
   if (f.infoText) {
     document.getElementById('favModalInfo').style.display = 'block';
     document.getElementById('favModalInfoText').textContent = f.infoText;
@@ -1328,6 +1424,27 @@ function openFav(i) {
     document.getElementById('favModalInfo').style.display = 'none';
   }
   document.getElementById('favModal').classList.add('open');
+}
+
+function switchFavView(view, i) {
+  const f = favorites[i];
+  const isPrimary = view === 'primary';
+  document.getElementById('favToneBody').innerHTML = isPrimary ? f.toneHTML : f.altToneHTML;
+
+  const primaryBtn = document.getElementById('favTogglePrimary');
+  const altBtn = document.getElementById('favToggleAlt');
+  primaryBtn.style.background = isPrimary ? 'var(--amber)' : 'var(--surface2)';
+  primaryBtn.style.border = isPrimary ? 'none' : '1px solid var(--border)';
+  primaryBtn.style.color = isPrimary ? '#0f0e0c' : 'var(--text-dim)';
+  altBtn.style.background = !isPrimary ? 'var(--amber)' : 'var(--surface2)';
+  altBtn.style.border = !isPrimary ? 'none' : '1px solid var(--border)';
+  altBtn.style.color = !isPrimary ? '#0f0e0c' : 'var(--text-dim)';
+
+  // Update why panel
+  const infoEl = document.getElementById('favModalInfo');
+  const infoText = isPrimary ? f.infoText : f.altInfoText;
+  if (infoText) { infoEl.style.display = 'block'; document.getElementById('favModalInfoText').textContent = infoText; }
+  else { infoEl.style.display = 'none'; }
 }
 
 function reloadFavSong() {
