@@ -1696,37 +1696,41 @@ Keep answers concise and practical — this is a mobile chat UI. Plain text only
 
 // ===== EXPORT =====
 function exportApp() {
-  // Get current HTML source
+  // Capture current data
+  const currentGear = JSON.parse(localStorage.getItem('tc_gear') || 'null') || gear;
+  const currentFavorites = JSON.parse(localStorage.getItem('tc_favorites') || '[]');
+  const currentApiKey = localStorage.getItem('tc_apikey') || '';
+  const currentUsage = JSON.parse(localStorage.getItem('tc_usage') || '{"calls":[],"totalIn":0,"totalOut":0}');
+
+  // Get clean HTML source
   let html = document.documentElement.outerHTML;
 
-  // Inject current localStorage data as defaults so the exported file
-  // opens with all gear, favorites, and settings pre-loaded
-  const snapshot = {
-    tc_gear: localStorage.getItem('tc_gear'),
-    tc_favorites: localStorage.getItem('tc_favorites'),
-    tc_apikey: localStorage.getItem('tc_apikey'),
-    tc_usage: localStorage.getItem('tc_usage')
-  };
+  // Remove any previously injected snapshot block
+  html = html.replace(/\/\/ ===== BAKED SNAPSHOT =====[\s\S]*?\/\/ ===== END SNAPSHOT =====\n?/g, '');
 
-  const injectionScript = `
-<script id="tc-snapshot-loader">
+  // Remove any previous tc-snapshot-loader script
+  html = html.replace(/<script id="tc-snapshot-loader">[\s\S]*?<\/script>/g, '');
+
+  // Build baked-in data block that runs before init()
+  const snapshotBlock = `// ===== BAKED SNAPSHOT =====
+// Exported: ${new Date().toISOString()}
 (function() {
-  var snapshot = ${JSON.stringify(snapshot)};
-  for (var key in snapshot) {
-    if (snapshot[key] && !localStorage.getItem(key)) {
-      localStorage.setItem(key, snapshot[key]);
-    }
-  }
-  var s = document.getElementById('tc-snapshot-loader');
-  if (s) s.remove();
+  var d = ${JSON.stringify({
+    tc_gear: JSON.stringify(currentGear),
+    tc_favorites: JSON.stringify(currentFavorites),
+    tc_apikey: currentApiKey,
+    tc_usage: JSON.stringify(currentUsage)
+  }, null, 0)};
+  // Always write — this is a fresh export
+  for (var k in d) { if (d[k]) localStorage.setItem(k, d[k]); }
 })();
-<\/script>`;
+// ===== END SNAPSHOT =====
+`;
 
-  // Insert snapshot loader right after <head>
-  html = html.replace('<head>', '<head>' + injectionScript);
+  // Inject right before init() call
+  html = html.replace('init();\n</script>', snapshotBlock + 'init();\n</script>');
 
-  // Create and trigger download
-  const blob = new Blob([html], { type: 'text/html' });
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1735,6 +1739,11 @@ function exportApp() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+
+  // Confirm to user
+  const btn = event.currentTarget || document.querySelector('[onclick="exportApp()"]');
+  const orig = btn?.innerHTML;
+  if (btn) { btn.innerHTML = '✓ Exported!'; setTimeout(() => { if (btn) btn.innerHTML = orig; }, 2000); }
 }
 
 // ===== INIT =====
