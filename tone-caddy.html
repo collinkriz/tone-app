@@ -150,9 +150,7 @@
   .modal-overlay.open { display: flex; }
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; padding: 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
   @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; cursor: pointer; }
-  .modal-handle-zone { width: 100%; padding: 8px 0 4px; margin: -8px 0 12px; display: flex; justify-content: center; cursor: pointer; touch-action: none; }
-  .modal-handle-zone .modal-handle { margin: 0; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
   .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; color: var(--amber); }
 
   .form-group { margin-bottom: 16px; }
@@ -206,8 +204,10 @@
   .chat-input::placeholder { color: var(--text-muted); }
   .chat-send { width: 40px; height: 40px; border-radius: 50%; background: var(--amber); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: transform 0.15s; }
   .chat-send:active { transform: scale(0.9); }
-  .chat-send:disabled { background: var(--surface2); }
+/* Override any baked-in modal open state from exports — JS will re-open if needed */
+  .modal-overlay.open { display: none; }
 </style>
+<style id="modal-unlock">/* unlocked by JS */</style>
 </head>
 <body>
 
@@ -505,7 +505,7 @@
 </div>
 
 <!-- USAGE MODAL -->
-<div class="modal-overlay open" id="usageModal">
+<div class="modal-overlay" id="usageModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">API Usage</div>
@@ -1871,23 +1871,37 @@ function init() {
   renderGear();
   renderGuitarSelector();
   updateUsageBadge();
+
+  // Always start clean — close any modals baked into exported DOM
+  document.querySelectorAll('.modal-overlay').forEach(o => o.classList.remove('open'));
+  // Unlock modal display (was suppressed pre-JS to prevent flash)
+  const unlockStyle = document.getElementById('modal-unlock');
+  if (unlockStyle) unlockStyle.textContent = '.modal-overlay.open { display: flex; }';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-tone').classList.add('active');
+  document.querySelector('.nav-tab').classList.add('active');
   showToneState('search');
+
   const banner = document.getElementById('noKeyBanner');
   if (banner) banner.style.display = apiKey ? 'none' : 'block';
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
   });
 
-  // Swipe down to close any modal
-  document.querySelectorAll('.modal').forEach(modal => {
+  // Swipe down from top of modal to close
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
     let startY = 0;
-    modal.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-    modal.addEventListener('touchend', e => {
+    let startX = 0;
+    overlay.addEventListener('touchstart', e => {
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+    overlay.addEventListener('touchend', e => {
       const dy = e.changedTouches[0].clientY - startY;
-      if (dy > 60) {
-        const overlay = modal.closest('.modal-overlay');
-        if (overlay) closeModal(overlay.id);
-      }
+      const dx = Math.abs(e.changedTouches[0].clientX - startX);
+      // Only close if mostly vertical downward swipe of 80px+
+      if (dy > 80 && dx < 60) closeModal(overlay.id);
     }, { passive: true });
   });
   document.getElementById('songInput').addEventListener('keydown', e => { if (e.key === 'Enter') identifySong(); });
