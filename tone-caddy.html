@@ -428,6 +428,10 @@
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn-primary" style="flex:2" onclick="closeModal('usageModal')">Done</button>
     </div>
+    <button onclick="exportApp()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:14px;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      ↓ Export App with My Data
+    </button>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5;text-align:center;">Downloads a snapshot with your gear, library, and settings baked in. Share with Claude to make updates.</p>
     <button class="btn-danger" onclick="resetUsage()" style="margin-top:10px;">Reset All Usage Data</button>
   </div>
 </div>
@@ -980,7 +984,8 @@ function renderRigEditorPedals() {
   const allSorted = sortPedalsByChainLogic(gear.pedals);
   el.innerHTML = allSorted.map(p => {
     const active = rigEditorPending.some(n => n.trim().toLowerCase() === p.name.trim().toLowerCase());
-    const chainPos = ['Tuner','Comp','Wah','Boost','BD-2','TS Boost','OD','Dist','Fuzz','Mod','Pitch','Delay','Reverb','DI'][getPedalChainOrder(p)] || 'FX';
+    const CHAIN_LABELS = ['Tuner','Gate','Comp','Wah','Boost','BD-2','TS','OD','Dist','Fuzz','Mod','Pitch','Delay','Reverb','Loop','DI'];
+    const chainPos = CHAIN_LABELS[getPedalChainOrder(p)] || 'FX';
     return `<div onclick="toggleRigPedal('${p.name.replace(/'/g,"\\'")}', this)"
       style="display:flex;align-items:center;gap:12px;background:${active ? 'rgba(232,168,37,0.08)' : 'var(--surface2)'};border:1px solid ${active ? 'var(--amber-dim)' : 'var(--border)'};border-radius:8px;padding:12px 14px;cursor:pointer;transition:all 0.15s;">
       <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${active ? 'var(--amber)' : 'var(--border)'};background:${active ? 'var(--amber)' : 'none'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#0f0e0c;font-weight:700;">${active ? '✓' : ''}</div>
@@ -1570,6 +1575,49 @@ Keep answers concise and practical — this is a mobile chat UI. Plain text only
 
   document.getElementById('chatSend').disabled = false;
   input.focus();
+}
+
+// ===== EXPORT =====
+function exportApp() {
+  // Get current HTML source
+  let html = document.documentElement.outerHTML;
+
+  // Inject current localStorage data as defaults so the exported file
+  // opens with all gear, favorites, and settings pre-loaded
+  const snapshot = {
+    tc_gear: localStorage.getItem('tc_gear'),
+    tc_favorites: localStorage.getItem('tc_favorites'),
+    tc_apikey: localStorage.getItem('tc_apikey'),
+    tc_usage: localStorage.getItem('tc_usage')
+  };
+
+  const injectionScript = `
+<script id="tc-snapshot-loader">
+(function() {
+  var snapshot = ${JSON.stringify(snapshot)};
+  for (var key in snapshot) {
+    if (snapshot[key] && !localStorage.getItem(key)) {
+      localStorage.setItem(key, snapshot[key]);
+    }
+  }
+  var s = document.getElementById('tc-snapshot-loader');
+  if (s) s.remove();
+})();
+<\/script>`;
+
+  // Insert snapshot loader right after <head>
+  html = html.replace('<head>', '<head>' + injectionScript);
+
+  // Create and trigger download
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tone-caddy-' + new Date().toISOString().slice(0,10) + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ===== INIT =====
