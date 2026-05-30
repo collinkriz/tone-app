@@ -263,17 +263,20 @@
   </div>
 
   <!-- CONFIRM STATE: shown after song identified -->
-  <div id="songConfirmArea" style="display: none;">
-    <div id="songConfirmCard" style="background:var(--surface2); border:1px solid var(--amber-dim); border-radius:12px; padding:20px; margin-bottom:16px;">
-      <div style="font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--amber-dim); margin-bottom:10px;">Identified</div>
-      <div id="songConfirmTitle" style="font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:900; color:var(--text); line-height:1.1; margin-bottom:4px;">Just a Girl</div>
-      <div id="songConfirmArtist" style="font-size:14px; color:var(--text-dim); margin-bottom:10px;">No Doubt  ·  1995  ·  Ska Punk</div>
-      <div id="songConfirmMeta" style="font-size:13px; color:var(--text-dim); line-height:1.65; padding-top:10px; border-top:1px solid var(--border);">Features a driving, distorted guitar riff with a ska-influenced upstroke rhythm that perfectly complements Gwen Stefani's defiant vocals.</div>
+  <div id="songConfirmArea" style="display:none;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;">Select a Match</div>
+    <div id="songMatchList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+
+    <!-- Refine search -->
+    <div id="refineRow" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Not what you meant?</div>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" id="refineInput" type="text" placeholder="e.g. Elderberry Wine by Wednesday (band)" autocomplete="off" autocorrect="off" style="flex:1;font-size:14px;padding:10px 12px;">
+        <button onclick="refineSongSearch()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px 14px;cursor:pointer;flex-shrink:0;white-space:nowrap;">Search →</button>
+      </div>
     </div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn-secondary" style="flex:1" onclick="resetSongSearch()">← Back</button>
-      <button class="btn-primary" style="flex:2" onclick="getTone()">Get Tone →</button>
-    </div>
+
+    <button class="btn-secondary" style="width:100%" onclick="resetSongSearch()">← Back</button>
   </div>
 
   <!-- RESULTS STATE -->
@@ -1204,14 +1207,13 @@ function selectGuitar(i) {
 }
 
 // ===== SONG IDENTIFICATION =====
-async function identifySong() {
-  const query = document.getElementById('songInput').value.trim();
+async function identifySong(query) {
+  if (!query) query = document.getElementById('songInput').value.trim();
   if (!query) { alert('Enter a song or artist name'); return; }
   if (!apiKey) { alert('Add your Anthropic API key first'); toggleApiModal(); return; }
 
   const btn = document.getElementById('toneBtn');
-  btn.disabled = true;
-  btn.textContent = 'Identifying...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Identifying...'; }
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1219,33 +1221,87 @@ async function identifySong() {
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{ role: 'user', content: `Identify this song or artist: "${query}". Be generous — try partial titles, common misspellings, and alternate names. "Penny on a train track" is by Ben Kweller. "Teenage kicks" is The Undertones. Do your best to match it. Respond ONLY with valid JSON, no markdown, no backticks, no explanation, exactly this shape: {"title":"Song Title","artist":"Artist Name","year":"1995","genre":"Rock","notes":"One sentence about the guitar tone or sound of this specific song."} If it is just an artist name with no specific song, pick their most iconic or recognizable song. Only use Unknown artist if you truly have no idea what this could be.` }]
+        max_tokens: 500,
+        messages: [{ role: 'user', content: `Identify this song query: "${query}". Return the top 3 most likely matches ranked by likelihood. Consider different artists who may have songs with similar names — e.g. "Elderberry Wine" could be Elton John OR Wednesday (the indie band). Be generous with partial titles and misspellings. Respond ONLY with valid JSON, no markdown, no backticks:
+{"matches":[
+  {"title":"Song Title","artist":"Artist Name","year":"1995","genre":"Rock","notes":"One sentence about the guitar tone of this song."},
+  {"title":"Song Title","artist":"Artist Name","year":"2001","genre":"Indie","notes":"One sentence about the guitar tone of this song."},
+  {"title":"Song Title","artist":"Artist Name","year":"2010","genre":"Alt","notes":"One sentence about the guitar tone of this song."}
+]}
+If fewer than 3 clear matches exist return what you have. If it's just an artist name return their top 3 most iconic songs.` }]
       })
     });
     const raw = await res.text();
     const data = JSON.parse(raw);
     if (!res.ok || data.type === 'error') throw new Error((data.error && data.error.message) || 'HTTP ' + res.status);
     if (data.usage) trackUsage('Song ID', data.usage.input_tokens || 0, data.usage.output_tokens || 0);
-    const text = data.content[0].text.replace(/```json|```/g, '').trim();
-    const song = JSON.parse(text);
-
-    confirmedSongTitle = song.title;
-    confirmedSongArtist = song.artist;
-    document.getElementById('songConfirmTitle').textContent = song.title;
-    document.getElementById('songConfirmArtist').textContent = song.artist + (song.year ? '  ·  ' + song.year : '') + (song.genre ? '  ·  ' + song.genre : '');
-    document.getElementById('songConfirmMeta').textContent = song.notes || '';
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim());
+    renderSongMatches(parsed.matches || []);
+    document.getElementById('refineInput').value = query;
     showToneState('confirm');
   } catch(e) {
-    confirmedSongTitle = query;
-    confirmedSongArtist = '';
-    document.getElementById('songConfirmTitle').textContent = query;
-    document.getElementById('songConfirmArtist').textContent = 'Proceeding with your input';
-    document.getElementById('songConfirmMeta').textContent = '';
+    renderSongMatches([{ title: query, artist: '', year: '', genre: '', notes: 'Could not identify — tap to proceed with this.' }]);
+    document.getElementById('refineInput').value = query;
     showToneState('confirm');
   }
-  btn.disabled = false;
-  btn.textContent = 'Find Song →';
+  if (btn) { btn.disabled = false; btn.textContent = 'Find Song →'; }
+}
+
+function renderSongMatches(matches) {
+  window._songMatches = matches;
+  const list = document.getElementById('songMatchList');
+  list.innerHTML = matches.map((m, i) => `
+    <div onclick="selectSongMatch(${i})" id="matchCard${i}"
+      style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.15s;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#f0e8d8;line-height:1.1;">${m.title}</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-top:3px;">${m.artist}${m.year ? ' · ' + m.year : ''}${m.genre ? ' · ' + m.genre : ''}</div>
+        </div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);flex-shrink:0;margin-top:3px;">#${i+1}</div>
+      </div>
+      ${m.notes ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.5;">${m.notes}</div>` : ''}
+    </div>
+  `).join('');
+  // Reset any previous selection button
+  const old = document.getElementById('getSelectedToneBtn');
+  if (old) old.remove();
+  confirmedSongTitle = '';
+  confirmedSongArtist = '';
+}
+
+function selectSongMatch(i) {
+  const match = window._songMatches[i];
+  if (!match) return;
+  confirmedSongTitle = match.title;
+  confirmedSongArtist = match.artist;
+  // Highlight selected
+  (window._songMatches || []).forEach((_, idx) => {
+    const card = document.getElementById('matchCard' + idx);
+    if (!card) return;
+    card.style.borderColor = idx === i ? 'var(--amber)' : 'var(--border)';
+    card.style.background = idx === i ? 'rgba(232,168,37,0.08)' : 'var(--surface2)';
+  });
+  // Add or update Get Tone button
+  let btn = document.getElementById('getSelectedToneBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'getSelectedToneBtn';
+    btn.className = 'btn-primary';
+    btn.style.cssText = 'width:100%;margin-bottom:10px;';
+    document.getElementById('refineRow').insertAdjacentElement('beforebegin', btn);
+  }
+  btn.textContent = 'Get Tone for "' + match.title + '" →';
+  btn.onclick = getTone;
+}
+
+async function refineSongSearch() {
+  const refined = document.getElementById('refineInput').value.trim();
+  if (!refined) return;
+  document.getElementById('songInput').value = refined;
+  const old = document.getElementById('getSelectedToneBtn');
+  if (old) old.remove();
+  await identifySong(refined);
 }
 
 function toggleStyleHint() {
@@ -1282,6 +1338,8 @@ function startNewSearch() {
 function resetSongSearch() {
   confirmedSongTitle = '';
   confirmedSongArtist = '';
+  const old = document.getElementById('getSelectedToneBtn');
+  if (old) old.remove();
   showToneState('search');
 }
 
